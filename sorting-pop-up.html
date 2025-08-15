@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Sort Expenses — Blue & Gold</title>
+<style>
+  /* ===== Brand (match your logo) ===== */
+  :root{
+    --blue:#1E5FA3;
+    --blue-2:#69A6D9;
+    --gold:#F0C04B;
+    --gold-2:#D9A630;
+    --bg:#0e1f33;          /* deep backdrop to match sleek mockups */
+    --card:#0f2643;        /* dark card shell */
+    --panel:#102a4e;       /* inner panels */
+    --text:#F7FAFF;
+    --muted:#b9d6ff;
+    --ok:#2e7d32;
+  }
+
+  /* Base */
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #1b3c66 10%, #0e1f33 60%),
+      linear-gradient(180deg, #0e1f33, #0b1828);
+    color:var(--text);
+  }
+
+  /* ===== Mobile Popup Shell (single-screen game) ===== */
+  .overlay{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:16px}
+  .popup{
+    width:min(420px, 100%);
+    height:min(780px, 96vh);
+    background:linear-gradient(180deg, #112a4d, #0f2240 40%, #0d1c33);
+    border-radius:24px;
+    border:1px solid rgba(255,255,255,.06);
+    box-shadow:0 30px 80px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.03);
+    overflow:hidden; display:flex; flex-direction:column; position:relative;
+  }
+
+  /* Header */
+  .head{
+    display:flex; align-items:center; gap:12px;
+    padding:14px 16px 10px;
+    background:linear-gradient(90deg, rgba(30,95,163,.5), rgba(105,166,217,.25));
+    backdrop-filter: blur(8px);
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .brand svg{display:block; filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))}
+  .title h1{margin:0; font-size:18px; letter-spacing:.2px}
+  .title p{margin:2px 0 0; font-size:12px; color:var(--muted)}
+
+  /* HUD row */
+  .hud{
+    display:flex; gap:8px; padding:10px 12px; justify-content:space-between; align-items:center;
+  }
+  .pill{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.08);
+    color:#eaf3ff; font-size:12px; padding:6px 10px; border-radius:999px;
+  }
+  .progress{
+    flex:1; height:8px; margin-left:8px; background:rgba(255,255,255,.06);
+    border-radius:999px; overflow:hidden; position:relative;
+  }
+  .progress > i{
+    position:absolute; left:0; top:0; bottom:0; width:0%;
+    background:linear-gradient(90deg, var(--gold), var(--gold-2));
+    border-radius:999px; transition:width .25s ease;
+  }
+
+  /* Card stack area */
+  .content{flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:12px}
+  .stack{
+    position:relative; flex:1; display:flex; align-items:center; justify-content:center; min-height:280px;
+  }
+  .exp-card{
+    width:92%; max-width:360px;
+    background:linear-gradient(180deg, #14335d, #102a4e);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:20px; padding:16px;
+    box-shadow:
+      0 20px 50px rgba(0,0,0,.45),
+      inset 0 0 0 1px rgba(255,255,255,.03);
+    position:absolute; will-change:transform;
+  }
+  .exp-card:nth-child(1){transform:translateY(-4px) scale(1); z-index:3}
+  .exp-card:nth-child(2){transform:translateY(8px) scale(.98); opacity:.9; z-index:2}
+  .exp-card:nth-child(3){transform:translateY(18px) scale(.96); opacity:.8; z-index:1}
+
+  .meta{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
+  .merchant{font-weight:800; letter-spacing:.2px}
+  .amount{font-weight:900; font-size:18px; color:#fff}
+  .sub{font-size:12px; color:#b8d3ff}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; padding:6px 10px; border-radius:999px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08);
+    margin-right:6px;
+  }
+  .chip i{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+  .chip.needs{color:var(--blue-2)}
+  .chip.wants{color:#89c2ff}
+  .chip.savings{color:var(--gold)}
+
+  /* Action buttons (inspired by modern mobile UI) */
+  .actions{
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:6px;
+  }
+  .btn{
+    padding:12px 10px; border:none; cursor:pointer; border-radius:16px; font-weight:800;
+    letter-spacing:.2px; color:#0b1424;
+    box-shadow:0 10px 24px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.12);
+    transition:transform .1s ease;
+  }
+  .btn:active{transform:translateY(1px)}
+  .b-needs {background:linear-gradient(180deg, var(--blue), #11467b); color:#e8f3ff; border:1px solid rgba(255,255,255,.08)}
+  .b-wants {background:linear-gradient(180deg, var(--blue-2), #2e7fb9); color:#06243f; border:1px solid rgba(255,255,255,.12)}
+  .b-save  {background:linear-gradient(180deg, var(--gold), var(--gold-2));}
+
+  /* Bottom bar */
+  .foot{
+    padding:12px; display:flex; align-items:center; justify-content:space-between;
+    border-top:1px solid rgba(255,255,255,.06);
+    background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+  }
+  .foot .mini{font-size:12px; color:#b9d6ff}
+  .reset{
+    background:transparent; color:#ffd56a; border:1px solid rgba(255,213,106,.4);
+    padding:8px 12px; border-radius:12px; font-weight:700;
+  }
+
+  /* Toast */
+  .toast{
+    position:absolute; left:50%; transform:translateX(-50%);
+    bottom:88px; background:#0f2a4d; color:#eaf3ff;
+    border:1px solid rgba(255,255,255,.12);
+    padding:10px 14px; border-radius:14px; font-size:12px; display:none;
+    box-shadow:0 16px 40px rgba(0,0,0,.45);
+  }
+</style>
+</head>
+<body>
+  <div class="overlay" role="dialog" aria-modal="true" aria-label="Sorting Expenses Game">
+    <div class="popup">
+      <!-- Header with inline ring logo -->
+      <div class="head">
+        <div class="brand" aria-hidden="true">
+          <svg width="44" height="34" viewBox="0 0 64 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="26" cy="26" r="18" stroke="#1E5FA3" stroke-width="6" fill="none"/>
+            <circle cx="26" cy="26" r="12" stroke="#69A6D9" stroke-width="6" fill="none" opacity=".6"/>
+            <circle cx="42" cy="26" r="18" stroke="#F0C04B" stroke-width="6" fill="none"/>
+            <circle cx="42" cy="26" r="12" stroke="#D9A630" stroke-width="6" fill="none" opacity=".6"/>
+          </svg>
+        </div>
+        <div class="title">
+          <h1>Sort Expenses</h1>
+          <p>Tap a category to file the top card. 1=Needs, 2=Wants, 3=Save</p>
+        </div>
+      </div>
+
+      <!-- HUD -->
+      <div class="hud">
+        <span class="pill">Score: <b id="score">0</b></span>
+        <span class="pill">Mistakes: <b id="miss">0</b></span>
+        <div class="progress" aria-label="Progress"><i id="bar"></i></div>
+      </div>
+
+      <div class="content">
+        <!-- Stack (only top 3 shown for depth effect) -->
+        <div class="stack" id="stack"></div>
+
+        <!-- Action buttons -->
+        <div class="actions">
+          <button class="btn b-needs"   data-choice="needs">Needs</button>
+          <button class="btn b-wants"   data-choice="wants">Wants</button>
+          <button class="btn b-save"    data-choice="savings">Save/Debt</button>
+        </div>
+      </div>
+
+      <div class="foot">
+        <small class="mini">Blue & gold theme • Mobile pop-up</small>
+        <button class="reset" id="resetBtn">Reset</button>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // ---------- Data ----------
+  const deckData = [
+    { name:"Rent / Mortgage",      merchant:"Housing",         amount:620,  type:"needs"   },
+    { name:"Electricity Bill",     merchant:"Utilities",       amount:55,   type:"needs"   },
+    { name:"Groceries",            merchant:"Local Market",    amount:95,   type:"needs"   },
+    { name:"Fuel / Transport",     merchant:"Mobility",        amount:42,   type:"needs"   },
+    { name:"Health Insurance",     merchant:"Healthcare",      amount:130,  type:"needs"   },
+    { name:"Dining Out",           merchant:"Restaurant",      amount:28,   type:"wants"   },
+    { name:"Streaming Subscription",merchant:"StreamBox",      amount:12,   type:"wants"   },
+    { name:"Clothing (non-essential)",merchant:"Retail",       amount:45,   type:"wants"   },
+    { name:"Cinema Tickets",       merchant:"Entertainment",   amount:18,   type:"wants"   },
+    { name:"Gadget Upgrade",       merchant:"Electronics",     amount:299,  type:"wants"   },
+    { name:"Emergency Fund",       merchant:"Savings",         amount:60,   type:"savings" },
+    { name:"Loan Repayment",       merchant:"Bank",            amount:150,  type:"savings" },
+    { name:"Retirement",           merchant:"Pension",         amount:120,  type:"savings" },
+    { name:"Investments",          merchant:"Broker",          amount:70,   type:"savings" }
+  ];
+
+  // ---------- State ----------
+  let deck = [];
+  let score = 0, mistakes = 0, total = 0;
+
+  // ---------- Elements ----------
+  const stackEl = document.getElementById('stack');
+  const scoreEl = document.getElementById('score');
+  const missEl  = document.getElementById('miss');
+  const bar     = document.getElementById('bar');
+  const toast   = document.getElementById('toast');
+  const resetBtn= document.getElementById('resetBtn');
+  const actionBtns = Array.from(document.querySelectorAll('.actions .btn'));
+
+  // ---------- Helpers ----------
+  const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; };
+  const fmt = n => 'OMR ' + n.toFixed(2);
+  const progress = () => {
+    const done = (total - deck.length);
+    const pct = total ? (done/total)*100 : 0;
+    bar.style.width = pct + '%';
+  }
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.style.display='none', 1200);
+  }
+
+  function cardTemplate(item, idx){
+    return `
+      <article class="exp-card" style="z-index:${3-idx}">
+        <div class="meta">
+          <div>
+            <div class="merchant">${item.name}</div>
+            <div class="sub">${item.merchant}</div>
+          </div>
+          <div class="amount">${fmt(item.amount)}</div>
+        </div>
+        <div>
+          <span class="chip needs"><i></i>Needs</span>
+          <span class="chip wants"><i></i>Wants</span>
+          <span class="chip savings"><i></i>Savings</span>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderStack(){
+    // show top 3 for layered look
+    stackEl.innerHTML = '';
+    const slice = deck.slice(0,3);
+    slice.forEach((it, i)=> stackEl.insertAdjacentHTML('beforeend', cardTemplate(it, i)));
+  }
+
+  function handleChoice(choice){
+    if(deck.length===0) return;
+    const top = deck[0];
+    if(choice === top.type){
+      // correct -> pop and score
+      score++;
+      deck.shift();
+      showToast('Filed correctly ✔');
+      renderStack();
+    }else{
+      mistakes++;
+      // quick shake on top card
+      const topEl = stackEl.querySelector('.exp-card:nth-child(1)');
+      if(topEl){
+        topEl.animate(
+          [{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],
+          {duration:180}
+        );
+      }
+      showToast('Try a different category');
+    }
+    updateHud();
+    if(deck.length===0){
+      showToast('All sorted! Score: '+score+' / '+(score+mistakes));
+    }
+  }
+
+  function updateHud(){
+    scoreEl.textContent = score;
+    missEl.textContent  = mistakes;
+    progress();
+  }
+
+  function reset(){
+    deck   = shuffle(deckData.slice());
+    total  = deck.length;
+    score  = 0; mistakes = 0;
+    renderStack();
+    updateHud();
+  }
+
+  // ---------- Wire up ----------
+  actionBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=> handleChoice(btn.dataset.choice));
+  });
+
+  // keyboard 1/2/3 for desktop users
+  window.addEventListener('keydown',(e)=>{
+    if(e.key==='1') handleChoice('needs');
+    if(e.key==='2') handleChoice('wants');
+    if(e.key==='3') handleChoice('savings');
+  });
+
+  resetBtn.addEventListener('click', reset);
+
+  reset();
+})();
+</script>
+</body>
+</html>

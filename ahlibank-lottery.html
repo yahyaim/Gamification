@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Lottery Ticket — Blue & Gold</title>
+<style>
+  /* ==== Brand (match your logo) ==== */
+  :root{
+    --blue:#1E5FA3;
+    --blue-2:#69A6D9;
+    --gold:#F0C04B;
+    --gold-2:#D9A630;
+    --bg:#0e1f33;
+    --card:#0f2643;
+    --panel:#102a4e;
+    --text:#F7FAFF;
+    --muted:#b9d6ff;
+    --ok:#35c36b;
+    --err:#ff6b6b;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    background:
+      radial-gradient(900px 600px at 50% -10%, #1b3c66 10%, #0e1f33 60%),
+      linear-gradient(180deg,#0e1f33,#0b1828);
+    color:var(--text);
+  }
+
+  /* ==== Mobile Pop-up Shell ==== */
+  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px}
+  .popup{
+    width:min(420px,100%);height:min(780px,96vh);
+    background:linear-gradient(180deg,#112a4d,#0f2240 40%,#0d1c33);
+    border-radius:24px;border:1px solid rgba(255,255,255,.06);
+    box-shadow:0 30px 80px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.03);
+    overflow:hidden;display:flex;flex-direction:column;position:relative;
+  }
+
+  /* Header */
+  .head{
+    display:flex;align-items:center;gap:12px;padding:14px 16px 10px;
+    background:linear-gradient(90deg,rgba(30,95,163,.5),rgba(105,166,217,.25));
+    border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:blur(8px);
+  }
+  .brand svg{display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))}
+  .title h1{margin:0;font-size:18px;letter-spacing:.2px}
+  .title p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+
+  /* Wallet / Controls */
+  .bar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px}
+  .pill{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+        color:#eaf3ff;font-size:12px;padding:6px 10px;border-radius:999px}
+  .btn{
+    padding:10px 12px;border:none;border-radius:14px;font-weight:800;letter-spacing:.2px;
+    color:#0b1424;box-shadow:0 10px 24px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.12);
+    transition:transform .08s ease;background:linear-gradient(180deg,var(--gold),var(--gold-2));
+  }
+  .btn:disabled{opacity:.6;filter:grayscale(.3)}
+  .btn:active{transform:translateY(1px)}
+
+  .content{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+
+  /* Ticket */
+  .ticket{
+    background:linear-gradient(180deg,#14335d,#102a4e);
+    border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:12px;
+    box-shadow:0 20px 50px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);
+  }
+  .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+  .row .label{font-weight:800;letter-spacing:.2px}
+  .small{font-size:12px;color:#b8d3ff}
+
+  /* Number grid */
+  .grid{
+    display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:8px
+  }
+  .ball{
+    aspect-ratio:1/1;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:900;user-select:none;cursor:pointer;
+    color:#06243f;
+    background:radial-gradient(circle at 30% 30%, #ffeaa6, #f0c04b);
+    border:1px solid #f3d26f;box-shadow:inset 0 2px 5px rgba(0,0,0,.15), 0 6px 14px rgba(0,0,0,.35);
+    transition:transform .08s ease, filter .2s ease, background .2s ease;
+  }
+  .ball:active{transform:translateY(1px)}
+  .ball.selected{
+    background:radial-gradient(circle at 30% 30%, #7ec0ff, #1E5FA3);
+    color:#eaf3ff;border-color:#79b7ff;
+  }
+  .ball.drawn{
+    background:radial-gradient(circle at 30% 30%, #b9e7ff, #69A6D9);
+    color:#0b2036;border-color:#a7d6ff;
+  }
+  .ball.match{
+    background:radial-gradient(circle at 30% 30%, #b7ffcc, #35c36b);
+    color:#052b19;border-color:#8ff0b2;
+  }
+
+  /* Draw results */
+  .results{
+    display:flex;flex-wrap:wrap;gap:8px;margin-top:8px
+  }
+  .chip{
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:8px 10px;border-radius:999px;font-weight:800;font-size:12px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)
+  }
+
+  /* Prize banner */
+  .banner{
+    margin-top:8px;padding:10px 12px;border-radius:14px;font-size:14px;font-weight:800;text-align:center;
+    background:linear-gradient(180deg,#ffd56a,var(--gold-2));color:#3b2d00;display:none
+  }
+  .banner.show{display:block}
+
+  /* Bottom bar */
+  .foot{padding:12px;display:flex;align-items:center;justify-content:space-between;
+        border-top:1px solid rgba(255,255,255,.06)}
+  .link{font-size:12px;color:#b9d6ff}
+</style>
+</head>
+<body>
+  <div class="overlay" role="dialog" aria-modal="true" aria-label="Lottery Ticket Game">
+    <div class="popup">
+      <!-- Header -->
+      <div class="head">
+        <div class="brand" aria-hidden="true">
+          <!-- Simple two rings in brand colors -->
+          <svg width="44" height="34" viewBox="0 0 64 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="26" cy="26" r="18" stroke="#1E5FA3" stroke-width="6" fill="none"/>
+            <circle cx="26" cy="26" r="12" stroke="#69A6D9" stroke-width="6" fill="none" opacity=".6"/>
+            <circle cx="42" cy="26" r="18" stroke="#F0C04B" stroke-width="6" fill="none"/>
+            <circle cx="42" cy="26" r="12" stroke="#D9A630" stroke-width="6" fill="none" opacity=".6"/>
+          </svg>
+        </div>
+        <div class="title">
+          <h1>Blue & Gold Lottery</h1>
+          <p>Select 6 numbers (1–36). Buy ticket, then Draw.</p>
+        </div>
+      </div>
+
+      <!-- Wallet / Controls -->
+      <div class="bar">
+        <span class="pill">Balance: <b id="balance">OMR 100.00</b></span>
+        <span class="pill">Ticket: <b id="price">OMR 5.00</b></span>
+        <button class="btn" id="buyBtn">Buy Ticket</button>
+      </div>
+
+      <div class="content">
+        <!-- Ticket Card -->
+        <section class="ticket">
+          <div class="row">
+            <div class="label">Your Picks</div>
+            <div class="small"><span id="pickCount">0</span>/6 selected</div>
+          </div>
+          <div class="grid" id="grid"></div>
+
+          <div class="row" style="margin-top:12px">
+            <button class="btn" id="drawBtn" disabled>Draw Numbers</button>
+            <span class="pill">Matches: <b id="matches">0</b></span>
+          </div>
+
+          <div class="row" style="margin-top:6px">
+            <div class="small">Drawn Numbers:</div>
+          </div>
+          <div class="results" id="drawn"></div>
+
+          <div class="banner" id="banner"></div>
+        </section>
+
+        <!-- Prize Table -->
+        <section class="ticket">
+          <div class="row">
+            <div class="label">Payouts</div>
+            <div class="small">Match → Prize</div>
+          </div>
+          <div class="results">
+            <span class="chip">3 → OMR 10</span>
+            <span class="chip">4 → OMR 25</span>
+            <span class="chip">5 → OMR 100</span>
+            <span class="chip">6 → OMR 1,000</span>
+          </div>
+        </section>
+      </div>
+
+      <!-- Footer -->
+      <div class="foot">
+        <small class="link">Blue & gold theme • Mobile pop-up</small>
+        <button class="btn" id="resetBtn" style="background:linear-gradient(180deg,#c9e2ff,#69A6D9);color:#06243f">New Round</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // ---- Config ----
+  const MAX = 36;       // numbers 1..36
+  const PICKS = 6;      // choose 6
+  const PRICE = 5;      // OMR per ticket
+  const PRIZES = {3:10, 4:25, 5:100, 6:1000};
+
+  // ---- State ----
+  let balance = 100;
+  let selected = new Set();
+  let drawn = [];
+  let bought = false;
+
+  // ---- Elements ----
+  const gridEl = document.getElementById('grid');
+  const drawnEl = document.getElementById('drawn');
+  const balanceEl = document.getElementById('balance');
+  const priceEl = document.getElementById('price');
+  const pickCountEl = document.getElementById('pickCount');
+  const matchesEl = document.getElementById('matches');
+  const bannerEl = document.getElementById('banner');
+  const buyBtn = document.getElementById('buyBtn');
+  const drawBtn = document.getElementById('drawBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  // ---- Helpers ----
+  const fmt = n => 'OMR ' + n.toFixed(2);
+  function updateWallet(){
+    balanceEl.textContent = fmt(balance);
+    priceEl.textContent = fmt(PRICE);
+  }
+  function rng(n){ return Math.floor(Math.random()*n); }
+  function sample(size, max){
+    const nums = new Set();
+    while(nums.size < size){
+      nums.add(1 + rng(max));
+    }
+    return Array.from(nums);
+  }
+  function renderGrid(){
+    gridEl.innerHTML = '';
+    for(let i=1;i<=MAX;i++){
+      const b = document.createElement('button');
+      b.type='button';
+      b.className = 'ball';
+      b.textContent = i;
+      b.setAttribute('aria-pressed','false');
+      b.addEventListener('click', ()=>{
+        if(!bought){
+          // pick phase
+          if(selected.has(i)){ selected.delete(i); b.classList.remove('selected'); }
+          else{
+            if(selected.size >= PICKS){ pulse(pickCountEl); return; }
+            selected.add(i); b.classList.add('selected');
+          }
+          pickCountEl.textContent = selected.size;
+          drawBtn.disabled = !(bought && selected.size===PICKS); // stays false pre-buy
+        } else {
+          // after buy, prevent changing picks
+          pulse(b);
+        }
+      });
+      gridEl.appendChild(b);
+    }
+  }
+  function pulse(el){
+    el.animate([{transform:'scale(1)'},{transform:'scale(1.06)'},{transform:'scale(1)'}],{duration:180});
+  }
+  function markDrawnAndMatches(){
+    const balls = gridEl.querySelectorAll('.ball');
+    balls.forEach(ball=>{
+      const n = parseInt(ball.textContent,10);
+      if(drawn.includes(n)) ball.classList.add('drawn');
+      if(drawn.includes(n) && selected.has(n)) ball.classList.add('match');
+    });
+  }
+  function renderDrawn(){
+    drawnEl.innerHTML='';
+    drawn.sort((a,b)=>a-b).forEach(n=>{
+      const s = document.createElement('span');
+      s.className='chip'; s.textContent = n;
+      drawnEl.appendChild(s);
+    });
+  }
+  function calcPrize(matches){
+    return PRIZES[matches] || 0;
+  }
+  function reset(roundOnly=false){
+    selected.clear();
+    drawn = [];
+    bought = false;
+    pickCountEl.textContent = 0;
+    matchesEl.textContent = 0;
+    drawBtn.disabled = true;
+    buyBtn.disabled = false;
+    bannerEl.classList.remove('show');
+    bannerEl.textContent = '';
+    renderGrid();
+    renderDrawn();
+    if(!roundOnly){ balance = 100; updateWallet(); }
+  }
+
+  // ---- Actions ----
+  buyBtn.addEventListener('click', ()=>{
+    if(selected.size !== PICKS){ pulse(pickCountEl); return; }
+    if(balance < PRICE){ bannerEl.textContent='Insufficient balance'; bannerEl.classList.add('show'); return; }
+    balance -= PRICE; updateWallet();
+    bought = true;
+    buyBtn.disabled = true;
+    drawBtn.disabled = false;
+    bannerEl.textContent = 'Ticket purchased! Tap Draw Numbers.';
+    bannerEl.classList.add('show');
+  });
+
+  drawBtn.addEventListener('click', ()=>{
+    if(!bought) return;
+    // draw unique numbers
+    drawn = sample(PICKS, MAX);
+    renderDrawn();
+    markDrawnAndMatches();
+    // score
+    let matches = 0;
+    drawn.forEach(n => { if(selected.has(n)) matches++; });
+    matchesEl.textContent = matches;
+    const prize = calcPrize(matches);
+    if(prize>0){
+      balance += prize; updateWallet();
+      bannerEl.textContent = `You matched ${matches}! Prize: ${fmt(prize)}`;
+    }else{
+      bannerEl.textContent = `No prize this time. Matches: ${matches}`;
+    }
+    bannerEl.classList.add('show');
+    drawBtn.disabled = true;
+  });
+
+  resetBtn.addEventListener('click', ()=> reset(true));
+
+  // keyboard shortcuts for desktop testers
+  window.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter' && !bought) buyBtn.click();
+    if(e.key===' ' && bought) { e.preventDefault(); drawBtn.click(); }
+  });
+
+  // ---- Init ----
+  updateWallet();
+  renderGrid();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bills Bingo — Mobile Pop-up</title>
+<style>
+  /* ===== Brand (blue & gold) ===== */
+  :root{
+    --blue:#1E5FA3;
+    --blue-2:#69A6D9;
+    --gold:#F0C04B;
+    --gold-2:#D9A630;
+    --bg:#0e1f33;
+    --panel:#102a4e;
+    --card:#0f2643;
+    --text:#F7FAFF;
+    --muted:#b9d6ff;
+    --ok:#35c36b;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    background:
+      radial-gradient(900px 600px at 50% -10%, #1b3c66 10%, #0e1f33 60%),
+      linear-gradient(180deg,#0e1f33,#0b1828);
+    color:var(--text);
+  }
+
+  /* ===== Mobile pop-up shell ===== */
+  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px}
+  .popup{
+    width:min(430px,100%);height:min(800px,96vh);
+    background:linear-gradient(180deg,#112a4d,#0f2240 40%,#0d1c33);
+    border-radius:24px;border:1px solid rgba(255,255,255,.06);
+    box-shadow:0 30px 80px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.03);
+    overflow:hidden;display:flex;flex-direction:column;position:relative;
+  }
+
+  /* Header */
+  .head{
+    display:flex;align-items:center;gap:12px;padding:14px 16px 10px;
+    background:linear-gradient(90deg,rgba(30,95,163,.5),rgba(105,166,217,.25));
+    border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:blur(8px);
+  }
+  .brand svg{display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))}
+  .title h1{margin:0;font-size:18px;letter-spacing:.2px}
+  .title p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+
+  /* HUD */
+  .hud{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px}
+  .pill{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+    color:#eaf3ff;font-size:12px;padding:6px 10px;border-radius:999px
+  }
+  .btn{
+    padding:10px 12px;border:none;border-radius:14px;font-weight:800;letter-spacing:.2px;cursor:pointer;
+    color:#0b1424;box-shadow:0 10px 24px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.12);
+    background:linear-gradient(180deg,var(--gold),var(--gold-2));transition:transform .08s ease
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.secondary{background:linear-gradient(180deg,#c9e2ff,#69A6D9);color:#06243f}
+
+  .content{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+
+  /* Bingo card */
+  .card{
+    background:linear-gradient(180deg,#14335d,#102a4e);
+    border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:12px;
+    box-shadow:0 20px 50px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);
+  }
+  .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+  .label{font-weight:800;letter-spacing:.2px}
+  .small{font-size:12px;color:#b8d3ff}
+
+  .grid{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px
+  }
+  .tile{
+    min-height:66px;border-radius:14px;padding:10px;position:relative;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+    display:flex;align-items:flex-start;justify-content:flex-start;gap:8px;cursor:pointer;
+    transition:filter .2s ease, transform .06s ease;
+  }
+  .tile:active{transform:translateY(1px)}
+  .t-title{font-weight:800;font-size:12px;line-height:1.15}
+  .t-sub{font-size:11px;opacity:.8;margin-top:3px}
+  .chk{
+    width:18px;height:18px;border-radius:6px;flex:none;margin-top:2px;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+    display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff
+  }
+  .tile.done{
+    outline:2px solid var(--gold); background:linear-gradient(180deg, rgba(240,192,75,.18), rgba(240,192,75,.06));
+  }
+  .tile.free{background:linear-gradient(180deg, rgba(105,166,217,.2), rgba(105,166,217,.08));}
+  .tile.lock{filter:saturate(.5) contrast(.9) opacity(.85)}
+
+  /* Line highlights */
+  .lineBadge{
+    position:absolute;right:8px;bottom:8px;font-size:10px;padding:4px 6px;border-radius:999px;
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18)
+  }
+
+  /* Toast / banner */
+  .toast{
+    position:absolute;left:50%;transform:translateX(-50%);bottom:88px;
+    background:#0f2a4d;color:#eaf3ff;border:1px solid rgba(255,255,255,.12);
+    padding:10px 14px;border-radius:14px;font-size:12px;display:none;
+    box-shadow:0 16px 40px rgba(0,0,0,.45)
+  }
+  .banner{
+    margin-top:8px;padding:10px 12px;border-radius:14px;font-size:14px;font-weight:800;text-align:center;
+    background:linear-gradient(180deg,#ffd56a,var(--gold-2));color:#3b2d00;display:none
+  }
+  .banner.show{display:block}
+
+  /* Footer */
+  .foot{padding:12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.06)}
+  .rules{font-size:12px;color:#b9d6ff}
+</style>
+</head>
+<body>
+  <div class="overlay" role="dialog" aria-modal="true" aria-label="Bills Bingo Game">
+    <div class="popup">
+      <!-- Header -->
+      <div class="head">
+        <div class="brand" aria-hidden="true">
+          <!-- inline “two-rings” logo in brand colors -->
+          <svg width="44" height="34" viewBox="0 0 64 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="26" cy="26" r="18" stroke="#1E5FA3" stroke-width="6" fill="none"/>
+            <circle cx="26" cy="26" r="12" stroke="#69A6D9" stroke-width="6" fill="none" opacity=".6"/>
+            <circle cx="42" cy="26" r="18" stroke="#F0C04B" stroke-width="6" fill="none"/>
+            <circle cx="42" cy="26" r="12" stroke="#D9A630" stroke-width="6" fill="none" opacity=".6"/>
+          </svg>
+        </div>
+        <div class="title">
+          <h1>Bills Bingo</h1>
+          <p>Complete simple in-app tasks. Lines give entries. No purchase necessary.</p>
+        </div>
+      </div>
+
+      <!-- HUD -->
+      <div class="hud">
+        <span class="pill">Entries (today): <b id="entriesToday">0</b>/5</span>
+        <span class="pill">Lines Completed: <b id="linesCount">0</b></span>
+        <button class="btn secondary" id="resetBtn">Reset Card</button>
+      </div>
+
+      <div class="content">
+        <!-- Bingo Card -->
+        <section class="card">
+          <div class="row">
+            <div class="label">Your Card</div>
+            <div class="small">Tap a tile after you finish the task in the app.</div>
+          </div>
+          <div class="grid" id="grid"></div>
+          <div class="banner" id="banner"></div>
+        </section>
+
+        <!-- Prize & Rules -->
+        <section class="card">
+          <div class="row">
+            <div class="label">How to earn entries</div>
+            <div class="small">per completed pattern</div>
+          </div>
+          <div class="row" style="flex-wrap:wrap;gap:8px">
+            <span class="pill">Any row/column: +1 entry</span>
+            <span class="pill">Both diagonals (X): +3 entries</span>
+            <span class="pill">Blackout (all tiles): +10 entries</span>
+            <span class="pill">Daily cap: 5 entries</span>
+          </div>
+        </section>
+      </div>
+
+      <!-- Footer -->
+      <div class="foot">
+        <small class="rules">Tip: center tile is FREE. Entries reset daily at 00:00.</small>
+        <button class="btn" id="shareBtn" title="For demo, copies progress as text">Share</button>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  /* ------------------ Config ------------------ */
+  const DAILY_CAP = 5; // entries/day
+  const SIZE = 5;      // 5x5 grid
+  // 24 tasks + 1 free center
+  const TASKS = [
+    "Pay an electricity bill",
+    "Schedule an autopay",
+    "Add a new biller",
+    "Enable bill reminders",
+    "View bill history",
+    "Save a beneficiary",
+    "Switch to e-statements",
+    "Set push notifications",
+    "Pay a water bill",
+    "Edit a nickname",
+    "Scan & save a QR bill",
+    "Top up mobile prepaid",
+    "FREE — center tile",
+    "Confirm email address",
+    "Update mailing address",
+    "Pay an internet bill",
+    "Set spending alert",
+    "Mark a favorite biller",
+    "Add note to a bill",
+    "View monthly spend",
+    "Enable biometric login",
+    "Set daily login streak",
+    "Create a savings goal",
+    "Link a new account",
+    "Pay a TV subscription"
+  ];
+
+  /* ------------------ State ------------------ */
+  const gridEl      = document.getElementById('grid');
+  const toast       = document.getElementById('toast');
+  const banner      = document.getElementById('banner');
+  const entriesTodayEl = document.getElementById('entriesToday');
+  const linesCountEl   = document.getElementById('linesCount');
+  const resetBtn    = document.getElementById('resetBtn');
+  const shareBtn    = document.getElementById('shareBtn');
+
+  let tiles = [];             // [{id, text, done, free}]
+  let linesCompleted = new Set(); // store line keys already rewarded
+  let entriesToday = 0;       // from storage
+  let todayKey = "";          // yyyy-mm-dd
+  let blackoutGiven = false;  // reward only once
+  let xBonusGiven = false;    // both diagonals bonus only once
+
+  /* ------------------ Helpers ------------------ */
+  const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; };
+  const keyToday = () => {
+    const d = new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  };
+  function loadDaily(){
+    todayKey = keyToday();
+    const savedKey = localStorage.getItem("bingo.day") || "";
+    if(savedKey !== todayKey){
+      localStorage.setItem("bingo.day", todayKey);
+      localStorage.setItem("bingo.entries", "0");
+    }
+    entriesToday = parseInt(localStorage.getItem("bingo.entries") || "0", 10);
+    entriesTodayEl.textContent = entriesToday;
+  }
+  function addEntries(n){
+    const before = entriesToday;
+    const allowed = Math.max(0, DAILY_CAP - before);
+    const grant = Math.min(n, allowed);
+    entriesToday += grant;
+    localStorage.setItem("bingo.entries", String(entriesToday));
+    entriesTodayEl.textContent = entriesToday;
+    if(grant>0) showToast(`+${grant} entry${grant>1?'ies':''}! (${entriesToday}/${DAILY_CAP} today)`);
+    if(n>grant) showToast("Daily entry cap reached.", false, 1350);
+  }
+  function showToast(msg, _good=true, dur=1200){
+    toast.textContent = msg;
+    toast.style.display='block';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.style.display='none', dur);
+  }
+
+  /* ------------------ Grid init ------------------ */
+  function buildTiles(){
+    const list = TASKS.slice();
+    shuffle(list);
+    // ensure center is FREE
+    const centerIndex = Math.floor((SIZE*SIZE)/2);
+    const freeIdx = list.findIndex(t => t.toLowerCase().includes("free"));
+    if(freeIdx>-1){ [list[freeIdx], list[centerIndex]] = [list[centerIndex], list[freeIdx]]; }
+    tiles = list.map((text, i)=>({
+      id:i, text, done:false, free:text.toLowerCase().includes("free")
+    }));
+    // auto-complete FREE tile
+    tiles[centerIndex].done = true;
+  }
+
+  function renderGrid(){
+    gridEl.innerHTML = "";
+    tiles.forEach((t, i)=>{
+      const el = document.createElement('button');
+      el.type='button';
+      el.className = 'tile' + (t.done?' done':'') + (t.free?' free':'');
+      el.setAttribute('data-id', t.id);
+      el.innerHTML = `
+        <span class="chk">${t.done?'✓':''}</span>
+        <div>
+          <div class="t-title">${t.text}</div>
+          <div class="t-sub">${t.free?'Tap to celebrate 🎉':'Finish in app, then tap'}</div>
+        </div>
+      `;
+      el.addEventListener('click', ()=> toggleTile(t.id));
+      gridEl.appendChild(el);
+    });
+    updateLinesAndRewards();
+  }
+
+  /* ------------------ Game logic ------------------ */
+  function toggleTile(id){
+    const t = tiles.find(x=>x.id===id);
+    if(!t) return;
+    // prevent unchecking; keep it one-way to reduce abuse (adjust if needed)
+    if(t.done){ pulse(gridEl.querySelector(`.tile[data-id="${id}"]`)); return; }
+    t.done = true;
+    const tileEl = gridEl.querySelector(`.tile[data-id="${id}"]`);
+    if(tileEl){
+      tileEl.classList.add('done');
+      tileEl.querySelector('.chk').textContent = '✓';
+    }
+    updateLinesAndRewards();
+  }
+
+  // Compute all lines: 5 rows, 5 cols, 2 diags
+  function getLines(){
+    const lines = [];
+    // rows
+    for(let r=0;r<SIZE;r++){
+      lines.push([...Array(SIZE)].map((_,c)=> r*SIZE + c));
+    }
+    // cols
+    for(let c=0;c<SIZE;c++){
+      lines.push([...Array(SIZE)].map((_,r)=> r*SIZE + c));
+    }
+    // diags
+    lines.push([...Array(SIZE)].map((_,i)=> i*SIZE + i)); // main
+    lines.push([...Array(SIZE)].map((_,i)=> i*SIZE + (SIZE-1-i))); // anti
+    return lines;
+  }
+
+  function isLineComplete(idxs){
+    return idxs.every(idx => tiles[idx].done);
+  }
+
+  function updateLinesAndRewards(){
+    const lineDefs = getLines();
+    let completedNow = 0;
+
+    // award +1 for each newly-complete row/col/diag
+    lineDefs.forEach((idxs, i)=>{
+      const key = "L"+i;
+      const done = isLineComplete(idxs);
+      if(done && !linesCompleted.has(key)){
+        linesCompleted.add(key);
+        completedNow++;
+      }
+    });
+
+    // Update UI counter
+    linesCountEl.textContent = linesCompleted.size;
+
+    // entries: +1 per new line (cap daily)
+    if(completedNow>0) addEntries(completedNow);
+
+    // X bonus (both diagonals = indices 10 and 11)
+    const mainDiag = 10, antiDiag = 11;
+    if(linesCompleted.has("L"+mainDiag) && linesCompleted.has("L"+antiDiag) && !xBonusGiven){
+      xBonusGiven = true;
+      addEntries(3);
+      banner.textContent = "X pattern completed! +3 bonus entries";
+      banner.classList.add('show');
+    }
+
+    // blackout bonus
+    const allDone = tiles.every(t=>t.done);
+    if(allDone && !blackoutGiven){
+      blackoutGiven = true;
+      addEntries(10);
+      banner.textContent = "Blackout! All tiles complete. +10 entries";
+      banner.classList.add('show');
+      celebrate();
+    }
+  }
+
+  function pulse(el){
+    if(!el) return;
+    el.animate([{transform:'scale(1)'},{transform:'scale(1.03)'},{transform:'scale(1)'}],{duration:160});
+  }
+
+  function celebrate(){
+    // simple confetti-ish animation
+    const n = 18;
+    for(let i=0;i<n;i++){
+      const s = document.createElement('div');
+      s.style.position='absolute';
+      s.style.left = (10+Math.random()*80)+'%';
+      s.style.top = '12%';
+      s.style.width='6px'; s.style.height='6px';
+      s.style.borderRadius='50%';
+      s.style.background = i%2? 'var(--gold)' : '#69A6D9';
+      s.style.boxShadow='0 0 10px rgba(0,0,0,.3)';
+      s.style.zIndex='99';
+      document.querySelector('.popup').appendChild(s);
+      const dx = (Math.random()*2-1)*60;
+      const dy = 520 + Math.random()*60;
+      s.animate([
+        { transform:'translate(0,0)', opacity:1 },
+        { transform:`translate(${dx}px, ${dy}px)`, opacity:0 }
+      ], { duration:900+Math.random()*500, easing:'cubic-bezier(.2,.7,.2,1)' })
+      .onfinish = ()=> s.remove();
+    }
+  }
+
+  /* ------------------ Controls ------------------ */
+  resetBtn.addEventListener('click', ()=>{
+    linesCompleted.clear();
+    blackoutGiven = false;
+    xBonusGiven = false;
+    banner.classList.remove('show');
+    banner.textContent = '';
+    buildTiles();
+    renderGrid();
+    showToast("New card generated.");
+  });
+
+  shareBtn.addEventListener('click', async ()=>{
+    const doneCount = tiles.filter(t=>t.done).length;
+    const text =
+      `Bills Bingo — ${linesCompleted.size} lines, ${doneCount}/25 tiles, `+
+      `${entriesToday}/${DAILY_CAP} entries today.`;
+    try{
+      if(navigator.share){
+        await navigator.share({ text, title:"Bills Bingo" });
+      }else{
+        await navigator.clipboard.writeText(text);
+        showToast("Progress copied to clipboard.");
+      }
+    }catch(e){ showToast("Share canceled."); }
+  });
+
+  /* ------------------ Init ------------------ */
+  loadDaily();
+  buildTiles();
+  renderGrid();
+})();
+</script>
+</body>
+</html>

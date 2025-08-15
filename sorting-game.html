@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Sorting Expenses — Bank Mini Game</title>
+<style>
+  /* ===== Brand (match logo colors) ===== */
+  :root{
+    --blue:#1E5FA3;          /* deep blue */
+    --blue-2:#69A6D9;        /* light blue */
+    --gold:#F0C04B;          /* gold */
+    --gold-2:#D9A630;        /* darker gold */
+    --text:#0d2036;
+    --bg:#f4f8ff;
+    --card:#ffffff;
+    --ok:#2e7d32;
+    --err:#b00020;
+  }
+
+  /* ===== Reset / base ===== */
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+    background:radial-gradient(1200px 600px at 50% -10%, #e9f2ff 10%, #fff 60%);
+    color:var(--text);
+  }
+
+  /* ===== Popup Shell (mobile-friendly) ===== */
+  .overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.28);
+    display:flex; align-items:center; justify-content:center; padding:16px;
+  }
+  .popup{
+    width: min(420px, 100%);
+    height: min(720px, 90vh);
+    background:var(--card);
+    border-radius:20px;
+    box-shadow:0 18px 50px rgba(0,0,0,.25);
+    overflow:hidden; display:flex; flex-direction:column;
+    border:3px solid var(--blue-2);
+  }
+
+  /* ===== Header ===== */
+  .head{
+    padding:14px 16px;
+    background:linear-gradient(90deg,var(--blue), var(--blue-2));
+    color:#fff; display:flex; align-items:center; gap:12px;
+  }
+  .brand svg{display:block}
+  .title{line-height:1.1}
+  .title h1{margin:0; font-size:18px; font-weight:800; letter-spacing:.2px}
+  .title p{margin:2px 0 0; opacity:.95; font-size:12px}
+
+  /* ===== Content scroll area ===== */
+  .content{flex:1; overflow:auto; padding:12px; background:linear-gradient(180deg,#fff, var(--bg));}
+
+  /* ===== HUD ===== */
+  .hud{
+    display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center;
+    margin-bottom:10px;
+  }
+  .pill{
+    background:#fff; border:2px solid var(--blue-2);
+    padding:6px 10px; border-radius:999px; font-size:12px; min-width:110px; text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.06);
+  }
+  .btn{
+    border:2px solid var(--gold-2);
+    background:var(--gold); color:#3b2d00; font-weight:700; font-size:13px;
+    padding:8px 12px; border-radius:12px;
+  }
+
+  /* ===== Layout ===== */
+  .grid{display:grid; gap:10px}
+  @media (min-width:380px){
+    .grid{grid-template-columns: 1fr 1fr}
+  }
+
+  .panel{
+    background:#fff; border:2px dashed var(--blue-2); border-radius:14px; padding:10px;
+  }
+  .panel h3{margin:0 0 6px; font-size:14px; display:flex; align-items:center; gap:8px}
+  .tag{font-size:10px; padding:2px 6px; border-radius:999px; background:#e9f3ff; color:#0d4b86; border:1px solid #d7e8ff}
+
+  .deck{min-height:180px}
+  .bucket{
+    min-height:120px; border-radius:12px; border:2px solid var(--gold);
+    padding:6px; background:#fffdf7;
+  }
+  .bucket[data-accept="needs"]{--accent:var(--blue)}
+  .bucket[data-accept="wants"]{--accent:var(--blue-2)}
+  .bucket[data-accept="savings"]{--accent:var(--gold-2)}
+  .bucket .hint{font-size:11px; opacity:.7; margin-bottom:6px}
+
+  /* ===== Cards ===== */
+  .cards{display:flex; flex-direction:column; gap:8px}
+  .card{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:#fff; border:2px solid #e7eef8; border-radius:12px; padding:10px 12px;
+    box-shadow:0 3px 10px rgba(0,0,0,.05);
+    touch-action:manipulation;
+  }
+  .card .name{font-weight:700; font-size:13px}
+  .badge{font-size:11px; background:#eef6ff; color:#0e4a86; padding:2px 8px; border-radius:10px; border:1px solid #d8e9ff}
+
+  /* States */
+  .selected{outline:3px solid var(--gold-2)}
+  .dropping{outline:3px dashed var(--accent); outline-offset:3px}
+  .correct{border-color:#cfe7cf; background:#f5fff5}
+  .wrong{animation:shake .18s linear}
+  @keyframes shake{
+    0%{transform:translateX(0)} 30%{transform:translateX(-5px)}
+    60%{transform:translateX(5px)} 100%{transform:translateX(0)}
+  }
+
+  /* ===== Footer ===== */
+  .foot{
+    padding:10px 12px; background:#fff; border-top:1px solid #e8eef7; display:flex; justify-content:center; gap:8px
+  }
+
+  /* Toast */
+  .toast{
+    position:absolute; left:50%; transform:translateX(-50%);
+    bottom:76px; background:#fff; border:2px solid var(--blue-2);
+    padding:8px 12px; border-radius:12px; font-size:12px; display:none;
+    box-shadow:0 8px 18px rgba(0,0,0,.12);
+  }
+</style>
+</head>
+<body>
+  <div class="overlay" role="dialog" aria-modal="true" aria-label="Sorting Expenses Game">
+    <div class="popup">
+      <!-- Header with inline logo (two rings in blue & gold) -->
+      <div class="head">
+        <div class="brand" aria-hidden="true">
+          <svg width="40" height="32" viewBox="0 0 64 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Blue ring -->
+            <circle cx="26" cy="26" r="18" stroke="#1E5FA3" stroke-width="6" fill="none"/>
+            <circle cx="26" cy="26" r="12" stroke="#69A6D9" stroke-width="6" fill="none" opacity=".6"/>
+            <!-- Gold ring overlapping -->
+            <circle cx="42" cy="26" r="18" stroke="#F0C04B" stroke-width="6" fill="none"/>
+            <circle cx="42" cy="26" r="12" stroke="#D9A630" stroke-width="6" fill="none" opacity=".6"/>
+          </svg>
+        </div>
+        <div class="title">
+          <h1>Sort the Expenses</h1>
+          <p>Tap a card, then tap a bin (or use 1/2/3).</p>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- HUD -->
+        <div class="hud">
+          <div class="pill">Score: <b id="score">0</b></div>
+          <div class="pill">Left: <b id="left">0</b></div>
+          <div class="pill">Mistakes: <b id="mistakes">0</b></div>
+          <button class="btn" id="resetBtn">Reset</button>
+        </div>
+
+        <!-- Grid -->
+        <div class="grid">
+          <section class="panel deck" aria-labelledby="deckTitle">
+            <h3 id="deckTitle">Expense Deck <span class="tag">tap to select</span></h3>
+            <div id="deck" class="cards" aria-live="polite"></div>
+          </section>
+
+          <section class="panel">
+            <h3><span class="tag" style="background:#eaf2ff;border-color:#d8e9ff;color:#073e74">Needs</span></h3>
+            <div class="bucket" data-accept="needs">
+              <div class="hint">Essentials: rent, utilities, groceries, transport.</div>
+              <div class="cards" id="bucket-needs"></div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h3><span class="tag" style="background:#eef7ff;border-color:#d8e9ff;color:#0e4a86">Wants</span></h3>
+            <div class="bucket" data-accept="wants">
+              <div class="hint">Nice-to-haves: dining out, entertainment, shopping.</div>
+              <div class="cards" id="bucket-wants"></div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h3><span class="tag" style="background:#fff6da;border-color:#f4d77b;color:#7a5a00">Savings / Debt</span></h3>
+            <div class="bucket" data-accept="savings">
+              <div class="hint">Emergency fund, investments, loan repayments.</div>
+              <div class="cards" id="bucket-savings"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="foot">
+        <small>Made for your bank’s gamification pilot — blue &amp; gold theme.</small>
+      </div>
+
+      <!-- Toast -->
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // --------- Data ----------
+  const expenses = [
+    { name: "Rent / Mortgage", type: "needs" },
+    { name: "Electricity Bill", type: "needs" },
+    { name: "Groceries", type: "needs" },
+    { name: "Public Transport / Fuel", type: "needs" },
+    { name: "Health Insurance", type: "needs" },
+    { name: "Dining Out", type: "wants" },
+    { name: "Streaming Subscription", type: "wants" },
+    { name: "Clothing (non-essential)", type: "wants" },
+    { name: "Cinema / Events", type: "wants" },
+    { name: "New Gadget Upgrade", type: "wants" },
+    { name: "Emergency Fund", type: "savings" },
+    { name: "Loan Repayment", type: "savings" },
+    { name: "Retirement Contribution", type: "savings" },
+    { name: "Investments", type: "savings" }
+  ];
+
+  // --------- Elements ----------
+  const deckEl = document.getElementById('deck');
+  const buckets = Array.from(document.querySelectorAll('.bucket'));
+  const scoreEl = document.getElementById('score');
+  const leftEl = document.getElementById('left');
+  const mistakesEl = document.getElementById('mistakes');
+  const resetBtn = document.getElementById('resetBtn');
+  const toast = document.getElementById('toast');
+
+  let score=0, mistakes=0, remaining=0;
+  let selectedCard=null;
+
+  // --------- Helpers ----------
+  function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]] } return arr; }
+  function updateHud(){ scoreEl.textContent=score; leftEl.textContent=remaining; mistakesEl.textContent=mistakes; }
+  function showToast(msg, good=false){
+    toast.textContent=msg;
+    toast.style.borderColor = good ? 'var(--gold-2)' : 'var(--blue-2)';
+    toast.style.display='block';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.style.display='none', 1200);
+  }
+  function makeCard(item, id){
+    const el=document.createElement('div');
+    el.className='card';
+    el.id='card-'+id;
+    el.setAttribute('data-type', item.type);
+    el.innerHTML = `<span class="name">${item.name}</span><span class="badge">Tap</span>`;
+    el.tabIndex=0;
+
+    // tap to select (mobile-first)
+    el.addEventListener('click', ()=>{
+      if(selectedCard===el){ el.classList.remove('selected'); selectedCard=null; return; }
+      if(selectedCard) selectedCard.classList.remove('selected');
+      selectedCard=el; el.classList.add('selected'); showToast('Now tap a category bin…');
+    });
+
+    // keyboard: 1/2/3
+    el.addEventListener('keydown', (e)=>{
+      const mapping={ '1':'needs', '2':'wants', '3':'savings' };
+      if(mapping[e.key]) tryDrop(el, mapping[e.key]);
+    });
+
+    // basic pointer "drag" visual (optional)
+    el.draggable = true;
+    el.addEventListener('dragstart', e=> e.dataTransfer.setData('text/plain', el.id));
+    return el;
+  }
+
+  function render(){
+    deckEl.innerHTML='';
+    const pool=shuffle(expenses.slice());
+    pool.forEach((it, idx)=> deckEl.appendChild(makeCard(it, idx)));
+    remaining=pool.length; score=0; mistakes=0; selectedCard=null;
+    updateHud();
+    document.querySelectorAll('[id^="bucket-"]').forEach(b=> b.innerHTML='');
+  }
+
+  function tryDrop(cardEl, bucketType){
+    const correct = cardEl.getAttribute('data-type');
+    if(bucketType===correct){
+      const bucket = document.querySelector('.bucket[data-accept="'+bucketType+'"] .cards');
+      if(bucket) bucket.appendChild(cardEl);
+      cardEl.classList.add('correct'); cardEl.classList.remove('selected');
+      cardEl.querySelector('.badge').textContent='✓';
+      selectedCard=null;
+      score++; remaining--; updateHud();
+      if(remaining===0) showToast('All sorted! Score: '+score+' / '+(score+mistakes), true);
+      else showToast('Correct!', true);
+      return true;
+    }else{
+      mistakes++; updateHud();
+      cardEl.classList.add('wrong');
+      setTimeout(()=> cardEl.classList.remove('wrong'), 220);
+      showToast('Try another category.');
+      return false;
+    }
+  }
+
+  // Bucket interactions (tap target)
+  buckets.forEach(bucket=>{
+    const accept=bucket.dataset.accept;
+    // tap to place selected
+    bucket.addEventListener('click', ()=>{
+      if(selectedCard) tryDrop(selectedCard, accept);
+    });
+    // desktop drag drop
+    bucket.addEventListener('dragover', e=>{ e.preventDefault(); bucket.classList.add('dropping'); });
+    bucket.addEventListener('dragleave', ()=> bucket.classList.remove('dropping'));
+    bucket.addEventListener('drop', e=>{
+      e.preventDefault(); bucket.classList.remove('dropping');
+      const id=e.dataTransfer.getData('text/plain');
+      const card=document.getElementById(id);
+      if(card) tryDrop(card, accept);
+    });
+  });
+
+  resetBtn.addEventListener('click', render);
+  render();
+})();
+</script>
+</body>
+</html>
