@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Round-Up Rally — Micro-Savings Race</title>
+<style>
+  /* ===== Brand (blue & gold) ===== */
+  :root{
+    --blue:#1E5FA3;
+    --blue-2:#69A6D9;
+    --gold:#F0C04B;
+    --gold-2:#D9A630;
+    --bg:#0e1f33;
+    --panel:#102a4e;
+    --card:#0f2643;
+    --text:#F7FAFF;
+    --muted:#b9d6ff;
+    --ok:#35c36b;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    background:
+      radial-gradient(900px 600px at 50% -10%, #1b3c66 10%, #0e1f33 60%),
+      linear-gradient(180deg,#0e1f33,#0b1828);
+    color:var(--text);
+  }
+
+  /* ===== Mobile pop-up shell ===== */
+  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px}
+  .popup{
+    width:min(430px,100%);height:min(800px,96vh);
+    background:linear-gradient(180deg,#112a4d,#0f2240 40%,#0d1c33);
+    border-radius:24px;border:1px solid rgba(255,255,255,.06);
+    box-shadow:0 30px 80px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.03);
+    overflow:hidden;display:flex;flex-direction:column;position:relative;
+  }
+
+  /* Header */
+  .head{
+    display:flex;align-items:center;gap:12px;padding:14px 16px 10px;
+    background:linear-gradient(90deg,rgba(30,95,163,.5),rgba(105,166,217,.25));
+    border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:blur(8px);
+  }
+  .brand svg{display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))}
+  .title h1{margin:0;font-size:18px;letter-spacing:.2px}
+  .title p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+
+  /* HUD */
+  .hud{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;flex-wrap:wrap}
+  .pill{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+    color:#eaf3ff;font-size:12px;padding:6px 10px;border-radius:999px
+  }
+  .switch{
+    display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:4px 6px
+  }
+  .sw{
+    width:44px;height:24px;border-radius:999px;background:#273e5e;position:relative;border:1px solid rgba(255,255,255,.12);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);cursor:pointer
+  }
+  .knob{
+    width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:50%;left:3px;transform:translateY(-50%);
+    transition:left .18s ease
+  }
+  .on .sw{background:linear-gradient(180deg,var(--gold),var(--gold-2))}
+  .on .knob{left:23px}
+
+  /* Content */
+  .content{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+  .card{
+    background:linear-gradient(180deg,#14335d,#102a4e);
+    border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:12px;
+    box-shadow:0 20px 50px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);
+  }
+  .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+  .label{font-weight:800;letter-spacing:.2px}
+  .small{font-size:12px;color:#b8d3ff}
+
+  /* Progress */
+  .progress{height:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:999px;overflow:hidden}
+  .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--gold-2));transition:width .25s ease}
+  .target{
+    display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:6px 8px
+  }
+  .target button{border:none;background:transparent;color:#fff;font-weight:900;font-size:18px;padding:2px 8px;cursor:pointer}
+  .target .v{font-weight:800}
+
+  /* Controls */
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:999px;font-weight:800;font-size:12px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);cursor:pointer
+  }
+  .btn{
+    padding:10px 12px;border:none;border-radius:14px;font-weight:800;letter-spacing:.2px;cursor:pointer;
+    color:#0b1424;box-shadow:0 10px 24px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.12);
+    background:linear-gradient(180deg,var(--gold),var(--gold-2));transition:transform .08s ease
+  }
+  .btn.secondary{background:linear-gradient(180deg,#c9e2ff,#69A6D9);color:#06243f}
+  .btn:active{transform:translateY(1px)}
+
+  /* Ledger */
+  .ledger{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto;margin-top:8px}
+  .tx{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;border-radius:12px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:13px
+  }
+  .tx .meta{display:flex;flex-direction:column}
+  .tx .m{font-weight:800}
+  .tx .s{font-size:12px;color:#b8d3ff}
+  .tx .u{font-weight:900;color:#ffd56a}
+
+  /* Footer */
+  .foot{padding:12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.06)}
+  .rules{font-size:12px;color:#b9d6ff}
+
+  /* Toast / banner */
+  .toast{
+    position:absolute;left:50%;transform:translateX(-50%);bottom:88px;
+    background:#0f2a4d;color:#eaf3ff;border:1px solid rgba(255,255,255,.12);
+    padding:10px 14px;border-radius:14px;font-size:12px;display:none;
+    box-shadow:0 16px 40px rgba(0,0,0,.45)
+  }
+  .banner{
+    margin-top:8px;padding:10px 12px;border-radius:14px;font-size:14px;font-weight:800;text-align:center;
+    background:linear-gradient(180deg,#ffd56a,var(--gold-2));color:#3b2d00;display:none
+  }
+  .banner.show{display:block}
+</style>
+</head>
+<body>
+  <div class="overlay" role="dialog" aria-modal="true" aria-label="Round-Up Rally Game">
+    <div class="popup">
+      <!-- Header -->
+      <div class="head">
+        <div class="brand" aria-hidden="true">
+          <!-- inline “two-rings” logo in brand colors -->
+          <svg width="44" height="34" viewBox="0 0 64 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="26" cy="26" r="18" stroke="#1E5FA3" stroke-width="6" fill="none"/>
+            <circle cx="26" cy="26" r="12" stroke="#69A6D9" stroke-width="6" fill="none" opacity=".6"/>
+            <circle cx="42" cy="26" r="18" stroke="#F0C04B" stroke-width="6" fill="none"/>
+            <circle cx="42" cy="26" r="12" stroke="#D9A630" stroke-width="6" fill="none" opacity=".6"/>
+          </svg>
+        </div>
+        <div class="title">
+          <h1>Round-Up Rally</h1>
+          <p>Enable round-ups, make purchases, hit your weekly savings target.</p>
+        </div>
+      </div>
+
+      <!-- HUD -->
+      <div class="hud">
+        <div class="switch" id="toggle">
+          <div class="sw"><div class="knob"></div></div>
+          <span>Round-ups <b id="ruState">OFF</b></span>
+        </div>
+        <span class="pill">This week saved: <b id="saved">OMR 0.00</b></span>
+        <span class="pill">Entries today: <b id="entriesToday">0</b>/5</span>
+      </div>
+
+      <div class="content">
+        <!-- Progress -->
+        <section class="card">
+          <div class="row">
+            <div class="label">Weekly target</div>
+            <div class="target">
+              <button id="minus">−</button>
+              <span class="v" id="target">OMR 10.00</span>
+              <button id="plus">+</button>
+            </div>
+          </div>
+          <div class="progress" aria-label="Weekly savings progress">
+            <div class="bar" id="bar"></div>
+          </div>
+          <div class="row" style="margin-top:6px">
+            <span class="small">Hit the target → +3 entries. 4-week streak → +10 entries.</span>
+            <span class="pill">Streak: <b id="streak">0</b> week(s)</span>
+          </div>
+          <div class="banner" id="banner"></div>
+        </section>
+
+        <!-- Simulate purchases (for demo; hook real tx in app) -->
+        <section class="card">
+          <div class="row">
+            <div class="label">Make a purchase</div>
+            <button class="btn secondary" id="random">Random</button>
+          </div>
+          <div class="chips">
+            <button class="chip" data-a="0.90">OMR 0.90</button>
+            <button class="chip" data-a="1.25">OMR 1.25</button>
+            <button class="chip" data-a="3.70">OMR 3.70</button>
+            <button class="chip" data-a="12.10">OMR 12.10</button>
+            <button class="chip" data-a="27.45">OMR 27.45</button>
+            <button class="chip" data-a="50.00">OMR 50.00</button>
+          </div>
+          <div class="row" style="margin-top:10px;gap:8px">
+            <input id="custom" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Custom amount (OMR)"
+                   style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff" />
+            <button class="btn" id="add">Add Purchase</button>
+          </div>
+
+          <div class="ledger" id="ledger"></div>
+        </section>
+      </div>
+
+      <!-- Footer -->
+      <div class="foot">
+        <small class="rules">Demo mode: simulate purchases here; in app, trigger on real transactions.</small>
+        <button class="btn" id="reset">New Week</button>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  /* ------------------ Config ------------------ */
+  const DAILY_CAP = 5;        // entries/day
+  const DEFAULT_TARGET = 10;  // OMR
+  const ROUND_TO = 1.00;      // round up to next whole OMR
+
+  /* ------------------ Elements ------------------ */
+  const toggleEl = document.getElementById('toggle');
+  const ruStateEl = document.getElementById('ruState');
+  const savedEl = document.getElementById('saved');
+  const entriesTodayEl = document.getElementById('entriesToday');
+  const targetEl = document.getElementById('target');
+  const barEl = document.getElementById('bar');
+  const streakEl = document.getElementById('streak');
+  const banner = document.getElementById('banner');
+  const ledgerEl = document.getElementById('ledger');
+  const toast = document.getElementById('toast');
+
+  const chips = Array.from(document.querySelectorAll('.chip'));
+  const customInput = document.getElementById('custom');
+  const addBtn = document.getElementById('add');
+  const randomBtn = document.getElementById('random');
+  const minusBtn = document.getElementById('minus');
+  const plusBtn  = document.getElementById('plus');
+  const resetBtn = document.getElementById('reset');
+
+  /* ------------------ State ------------------ */
+  let enabled = false;
+  let weeklySaved = 0;
+  let weeklyTarget = DEFAULT_TARGET;
+  let streak = 0;
+  let entriesToday = 0;
+  let weekKey = "";
+  let dayKey = "";
+
+  /* ------------------ Utils ------------------ */
+  const fmt = n => 'OMR ' + Number(n).toFixed(2);
+  const clamp = (n,min,max)=> Math.max(min, Math.min(max,n));
+  function keyDay(){
+    const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  function keyWeek(){
+    // ISO week key yyyy-Wxx
+    const d=new Date();
+    const temp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = temp.getUTCDay() || 7; // 1..7
+    temp.setUTCDate(temp.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(temp.getUTCFullYear(),0,1));
+    const weekNo = Math.ceil((((temp - yearStart)/86400000)+1)/7);
+    return temp.getUTCFullYear()+"-W"+String(weekNo).padStart(2,"0");
+  }
+  function saveState(){
+    const data = {enabled, weeklySaved, weeklyTarget, streak, weekKey, dayKey, entriesToday};
+    localStorage.setItem('roundup.state', JSON.stringify(data));
+  }
+  function loadState(){
+    const raw = localStorage.getItem('roundup.state');
+    if(raw){
+      try{
+        const d = JSON.parse(raw);
+        enabled = !!d.enabled;
+        weeklySaved = Number(d.weeklySaved||0);
+        weeklyTarget = Number(d.weeklyTarget||DEFAULT_TARGET);
+        streak = Number(d.streak||0);
+        entriesToday = Number(d.entriesToday||0);
+        dayKey = d.dayKey || keyDay();
+        weekKey = d.weekKey || keyWeek();
+      }catch{}
+    }
+    // rollover daily entries
+    const today = keyDay();
+    if(dayKey !== today){
+      dayKey = today; entriesToday = 0;
+    }
+    // rollover week
+    const thisWeek = keyWeek();
+    if(weekKey !== thisWeek){
+      // if last week met target, keep streak; else reset streak
+      const lastMet = localStorage.getItem('roundup.lastMet') === 'true';
+      if(!lastMet) streak = 0;
+      localStorage.setItem('roundup.lastMet','false');
+      weekKey = thisWeek; weeklySaved = 0;
+      // clear ledger
+      localStorage.removeItem('roundup.ledger.'+weekKey); // new week key (no log yet)
+    }
+  }
+  function addEntries(n){
+    const allowed = Math.max(0, DAILY_CAP - entriesToday);
+    const grant = Math.min(n, allowed);
+    entriesToday += grant;
+    entriesTodayEl.textContent = entriesToday;
+    if(grant>0) showToast(`+${grant} entry${grant>1?'ies':''}! (${entriesToday}/${DAILY_CAP} today)`);
+    if(n>grant) showToast("Daily entry cap reached.", false, 1350);
+    saveState();
+  }
+  function showToast(msg, _good=true, dur=1200){
+    toast.textContent = msg;
+    toast.style.display='block';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.style.display='none', dur);
+  }
+  function animateBar(){
+    const pct = weeklyTarget>0 ? clamp((weeklySaved/weeklyTarget)*100, 0, 100) : 0;
+    barEl.style.width = pct + '%';
+  }
+  function updateHUD(){
+    document.querySelector('.switch').classList.toggle('on', enabled);
+    ruStateEl.textContent = enabled? 'ON' : 'OFF';
+    savedEl.textContent = fmt(weeklySaved);
+    targetEl.textContent = fmt(weeklyTarget);
+    streakEl.textContent = String(streak);
+    entriesTodayEl.textContent = String(entriesToday);
+    animateBar();
+  }
+
+  /* ------------------ Ledger ------------------ */
+  function loadLedger(){
+    ledgerEl.innerHTML = '';
+    const raw = localStorage.getItem('roundup.ledger.'+weekKey);
+    if(!raw) return;
+    let arr=[]; try{ arr = JSON.parse(raw) || []; }catch{}
+    arr.forEach(it=> appendTx(it, false));
+  }
+  function saveLedgerItem(item){
+    const key = 'roundup.ledger.'+weekKey;
+    const raw = localStorage.getItem(key);
+    let arr=[]; try{ arr = raw? JSON.parse(raw):[]; }catch{}
+    arr.unshift(item);
+    arr = arr.slice(0,30);
+    localStorage.setItem(key, JSON.stringify(arr));
+  }
+  function appendTx({merchant, amount, round}, animate=true){
+    const el = document.createElement('div');
+    el.className = 'tx';
+    el.innerHTML = `
+      <div class="meta">
+        <div class="m">${merchant}</div>
+        <div class="s">Purchase ${fmt(amount)} • Round-up <span class="u">${fmt(round)}</span></div>
+      </div>
+      <div class="u">${fmt(round)}</div>
+    `;
+    ledgerEl.prepend(el);
+    if(animate){
+      el.animate([{transform:'translateY(-6px)',opacity:.0},{transform:'translateY(0)',opacity:1}],{duration:220});
+    }
+  }
+
+  /* ------------------ Game Logic ------------------ */
+  function roundUpContribution(amount){
+    const ceilTo = Math.ceil(amount / ROUND_TO) * ROUND_TO;
+    let diff = +(ceilTo - amount).toFixed(2);
+    if(diff < 0.01) diff = 0.00; // exact whole OMR gives 0
+    return diff;
+  }
+  const merchants = ["Café Azure","Green Grocer","Fuel Station","Pharmacy One","Metro Ride","Tech Stop","Bakery Lane","Cinema Park","Quick Mart","Falafel House"];
+  function randomMerchant(){ return merchants[Math.floor(Math.random()*merchants.length)]; }
+  function randomAmount(){
+    const n = (Math.random()*60 + 0.2);
+    return Math.round(n*100)/100;
+  }
+
+  function handlePurchase(amount){
+    amount = Math.max(0, Number(amount)||0);
+    const ru = enabled ? roundUpContribution(amount) : 0;
+    appendTx({merchant: randomMerchant(), amount, round: ru});
+    if(ru>0){
+      weeklySaved = +(weeklySaved + ru).toFixed(2);
+      updateHUD();
+      checkMilestones();
+    }else{
+      showToast(enabled ? "No round-up (already whole OMR)" : "Round-ups are OFF");
+    }
+    saveLedgerItem({merchant: randomMerchant(), amount, round: ru});
+    saveState();
+  }
+
+  function checkMilestones(){
+    if(weeklySaved >= weeklyTarget){
+      if(localStorage.getItem('roundup.met.'+weekKey) !== 'true'){
+        localStorage.setItem('roundup.met.'+weekKey,'true');
+        localStorage.setItem('roundup.lastMet','true');
+        streak += 1;
+        banner.textContent = "Weekly target hit! +3 entries";
+        banner.classList.add('show');
+        addEntries(3);
+        // 4-week streak bonus
+        if(streak>0 && streak % 4 === 0){
+          showToast("Streak x4! +10 bonus entries");
+          addEntries(10);
+        }
+        updateHUD(); saveState();
+        confetti();
+      }
+    }
+  }
+
+  function confetti(){
+    const n = 18;
+    for(let i=0;i<n;i++){
+      const s = document.createElement('div');
+      s.style.position='absolute';
+      s.style.left = (10+Math.random()*80)+'%';
+      s.style.top = '12%';
+      s.style.width='6px'; s.style.height='6px';
+      s.style.borderRadius='50%';
+      s.style.background = i%2? 'var(--gold)' : '#69A6D9';
+      s.style.boxShadow='0 0 10px rgba(0,0,0,.3)';
+      s.style.zIndex='99';
+      document.querySelector('.popup').appendChild(s);
+      const dx = (Math.random()*2-1)*60;
+      const dy = 520 + Math.random()*60;
+      s.animate(
+        [{ transform:'translate(0,0)', opacity:1 },
+         { transform:`translate(${dx}px, ${dy}px)`, opacity:0 }],
+        { duration:900+Math.random()*500, easing:'cubic-bezier(.2,.7,.2,1)' }
+      ).onfinish = ()=> s.remove();
+    }
+  }
+
+  /* ------------------ Controls ------------------ */
+  toggleEl.addEventListener('click', ()=>{
+    enabled = !enabled;
+    updateHUD(); saveState();
+  });
+
+  minusBtn.addEventListener('click', ()=>{
+    weeklyTarget = Math.max(1, +(weeklyTarget - 1).toFixed(2));
+    updateHUD(); saveState();
+  });
+  plusBtn.addEventListener('click', ()=>{
+    weeklyTarget = +(weeklyTarget + 1).toFixed(2);
+    updateHUD(); saveState();
+  });
+
+  chips.forEach(c => c.addEventListener('click', ()=> handlePurchase(Number(c.dataset.a))));
+  addBtn.addEventListener('click', ()=>{
+    const v = Number(customInput.value);
+    if(!v || v<=0){ showToast("Enter a valid amount"); return; }
+    handlePurchase(v);
+    customInput.value = "";
+  });
+  randomBtn.addEventListener('click', ()=> handlePurchase(randomAmount()));
+
+  resetBtn.addEventListener('click', ()=>{
+    // finalize week and start a new one
+    const met = weeklySaved >= weeklyTarget;
+    localStorage.setItem('roundup.lastMet', met ? 'true':'false');
+    localStorage.setItem('roundup.met.'+weekKey, met ? 'true':'false');
+    weekKey = ""; // force rollover
+    loadState();
+    banner.classList.remove('show'); banner.textContent='';
+    ledgerEl.innerHTML = '';
+    saveState(); updateHUD();
+    showToast("New week started");
+  });
+
+  // keyboard helpers for testers
+  window.addEventListener('keydown',(e)=>{
+    if(e.key==='r') randomBtn.click();
+    if(e.key==='t') toggleEl.click();
+  });
+
+  /* ------------------ Init ------------------ */
+  loadState();
+  updateHUD();
+  loadLedger();
+})();
+</script>
+</body>
+</html>
