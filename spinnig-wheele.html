@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Banking Wheel — Emojis Visible + Spinning</title>
+<style>
+  :root{--blue:#1E5FA3;--blue-2:#69A6D9;--gold:#F0C04B;--gold-2:#D9A630;--bg:#0e1f33;--text:#F7FAFF}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent} html,body{height:100%}
+  body{
+    margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text);
+    background:radial-gradient(900px 600px at 50% -10%, #1b3c66 10%, #0e1f33 60%), linear-gradient(180deg,#0e1f33,#0b1828);
+  }
+
+  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px}
+  .popup{width:min(430px,100%);height:min(800px,96vh);background:linear-gradient(180deg,#112a4d,#0f2240 40%,#0d1c33);
+         border-radius:24px;border:1px solid rgba(255,255,255,.06);box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.03);
+         overflow:hidden;display:flex;flex-direction:column}
+  .head{padding:14px 16px 10px;background:linear-gradient(90deg,rgba(30,95,163,.5),rgba(105,166,217,.25));border-bottom:1px solid rgba(255,255,255,.06)}
+  .head h1{margin:0;font-size:18px} .head p{margin:2px 0 0;font-size:12px;opacity:.9}
+  .content{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+  .card{background:linear-gradient(180deg,#14335d,#102a4e);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:12px;
+        box-shadow:0 20px 50px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.03)}
+  .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+
+  .stage{position:relative;display:flex;align-items:center;justify-content:center;padding:16px}
+  .wheel-wrap{position:relative;width:min(320px,84vw);aspect-ratio:1/1}
+
+  /* Rotor (spins disc + labels together) */
+  .rotor{position:absolute;inset:0;transform:rotate(0deg);transition:transform 3.2s cubic-bezier(.12,.2,.03,1);will-change:transform}
+  .disc{position:absolute;inset:0;border-radius:50%;z-index:1;
+        background:conic-gradient(from -90deg,
+          var(--gold) 0 45deg, var(--blue) 45deg 90deg,
+          var(--gold-2) 90deg 135deg, var(--blue-2) 135deg 180deg,
+          var(--gold) 180deg 225deg, var(--blue) 225deg 270deg,
+          var(--gold-2) 270deg 315deg, var(--blue-2) 315deg 360deg);
+        border:10px solid rgba(255,255,255,.1);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 20px 40px rgba(0,0,0,.35)}
+
+  /* Labels sit ABOVE the disc and rotate with the rotor */
+  .labels{position:absolute;inset:0;z-index:2;list-style:none;margin:0;padding:0;pointer-events:none}
+  .labels .tag{
+    position:absolute; /* we set left/top from JS trig */
+    transform:translate(-50%,-50%);
+    font-size:30px; line-height:1;
+    font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui,Arial, sans-serif;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,.45));
+  }
+
+  /* Center hub */
+  .hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;
+       width:84px;height:84px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#cfe7ff,#69A6D9);
+       border:4px solid rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);
+       display:flex;align-items:center;justify-content:center;font-size:28px}
+
+  /* Pointer on top */
+  .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:4;
+    width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:18px solid #ffd56a;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
+  .pointer-base{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:4;width:18px;height:18px;border-radius:50%;
+    background:#0b2036;border:2px solid #ffd56a}
+
+  .controls{display:flex;gap:8px;justify-content:center;margin-top:8px}
+  .btn{padding:10px 12px;border:none;border-radius:14px;font-weight:800;cursor:pointer;color:#0b1424;
+       background:linear-gradient(180deg,var(--gold),var(--gold-2));box-shadow:0 10px 24px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.12)}
+  .btn.secondary{background:linear-gradient(180deg,#c9e2ff,#69A6D9);color:#06243f}
+  .result{margin-top:10px;padding:10px 12px;border-radius:14px;text-align:center;font-weight:800;
+          background:linear-gradient(180deg,#ffd56a,var(--gold-2));color:#3b2d00;display:none}
+  .result.show{display:block}
+  .history{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;font-weight:800;font-size:12px;
+        background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+</style>
+</head>
+<body>
+<div class="overlay" role="dialog" aria-modal="true">
+  <div class="popup">
+    <div class="head">
+      <h1>Banking Wheel</h1>
+      <p>Emojis are visible, aligned, and rotate with the wheel.</p>
+    </div>
+
+    <div class="content">
+      <section class="card">
+        <div class="row"><strong>Spin the wheel</strong><span>Blue & gold theme</span></div>
+
+        <div class="stage">
+          <div class="wheel-wrap">
+            <div class="pointer"></div><div class="pointer-base"></div>
+
+            <!-- Rotor (spins) -->
+            <div id="rotor" class="rotor">
+              <div class="disc"></div>
+              <ul id="labels" class="labels"></ul>
+            </div>
+
+            <!-- Center hub -->
+            <div class="hub">🏦</div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button id="spinBtn" class="btn">SPIN</button>
+          <button id="resetBtn" class="btn secondary">Reset</button>
+        </div>
+
+        <div id="result" class="result"></div>
+
+        <div class="row" style="margin-top:8px"><strong>History</strong><span>Latest spins</span></div>
+        <div id="history" class="history"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // Banking emojis (no pig)
+  const EMO = ["🏦","💳","🛡️","🏛️","💰","📈","🧾","📱"];
+  const LAB = ["Vault","Card Controls","Security","Branch","Funds","Savings Boost","Bill Pay","Mobile Pay"];
+  const N = EMO.length, SEG = 360 / N;
+
+  const rotor = document.getElementById('rotor');
+  const list  = document.getElementById('labels');
+  const spinBtn = document.getElementById('spinBtn');
+  const resetBtn= document.getElementById('resetBtn');
+  const result  = document.getElementById('result');
+  const history = document.getElementById('history');
+
+  // Place each emoji by trig so it's rock solid across browsers
+  function buildLabels(){
+    list.innerHTML = '';
+    const size = list.getBoundingClientRect().width; // equals wheel size
+    const r = (size/2) - 34; // leave room from rim; tweak by a few px if needed
+    for (let i=0;i<N;i++){
+      const angleDeg = -90 + i*SEG + SEG/2;  // center of slice, 12 o’clock reference
+      const t = angleDeg * Math.PI / 180;
+      const x = Math.cos(t) * r;
+      const y = Math.sin(t) * r;
+
+      const span = document.createElement('span');
+      span.className = 'tag';
+      span.textContent = EMO[i];
+      span.style.left = `calc(50% + ${x}px)`;
+      span.style.top  = `calc(50% + ${y}px)`;
+      list.appendChild(span);
+    }
+  }
+
+  // Spin state
+  let spinning = false, rotation = 0;
+  function spin(){
+    if(spinning) return;
+    spinning = true; spinBtn.disabled = true; result.classList.remove('show');
+    const extra = 720 + Math.floor(Math.random()*360);
+    rotation = (rotation + extra) % (360*1000);
+    rotor.style.transform = `rotate(${rotation}deg)`;
+  }
+  function angleToIndex(finalDeg){
+    const a = ((finalDeg % 360) + 360) % 360;
+    const pointerAngle = (360 - a + 360) % 360;
+    return Math.floor(pointerAngle / SEG);
+  }
+  rotor.addEventListener('transitionend', (e)=>{
+    if(e.propertyName!=='transform') return;
+    const idx = angleToIndex(rotation);
+    result.textContent = `Landed on: ${LAB[idx]} ${EMO[idx]}`;
+    result.classList.add('show');
+    const chip = document.createElement('span'); chip.className='chip'; chip.textContent = LAB[idx];
+    history.prepend(chip); while(history.children.length>10) history.lastChild.remove();
+    spinning = false; spinBtn.disabled = false;
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    if(spinning) return;
+    rotor.style.transition='none'; rotor.style.transform='rotate(0deg)'; rotation=0;
+    void rotor.offsetWidth; rotor.style.transition='transform 3.2s cubic-bezier(.12,.2,.03,1)';
+    result.classList.remove('show');
+  });
+  spinBtn.addEventListener('click', spin);
+  window.addEventListener('keydown', e=>{ if(e.key===' '){ e.preventDefault(); spin(); } });
+
+  // Build after layout so we have the correct size
+  window.addEventListener('load', buildLabels);
+  window.addEventListener('resize', buildLabels);
+})();
+</script>
+</body>
+</html>
