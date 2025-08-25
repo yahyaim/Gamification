@@ -3,104 +3,145 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Gift Wheel — Weighted Prizes + Tickets</title>
+<title>ahlibank Lucky Wheel — Emojis Only</title>
 <style>
-  :root{--blue:#1E5FA3;--blue-2:#69A6D9;--gold:#F0C04B;--gold-2:#D9A630;--bg:#0e1f33;--text:#F7FAFF}
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent} html,body{height:100%}
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --text:#0b1424; --muted:#5b6b80;
+    --blue:#6fb3ff; --blue-2:#a9d4ff;
+    --gold:#ffd77a; --gold-2:#ffca4d;
+    --ring:#e6edf5; --accent:#0d6efd;
+    --rim:10px;       /* ring thickness */
+    --labels-pad:16px;/* labels layer inset */
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
   body{
-    margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text);
-    background:radial-gradient(900px 600px at 50% -10%, #1b3c66 10%, #0e1f33 60%), linear-gradient(180deg,#0e1f33,#0b1828);
+    margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);
+    background:
+      radial-gradient(900px 600px at 50% -10%, #e9f2ff 10%, var(--bg) 60%),
+      linear-gradient(180deg,var(--bg),#eef3f9);
   }
 
   .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px}
-  .popup{width:min(430px,100%);height:min(800px,96vh);background:linear-gradient(180deg,#112a4d,#0f2240 40%,#0d1c33);
-         border-radius:24px;border:1px solid rgba(255,255,255,.06);box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.03);
-         overflow:hidden;display:flex;flex-direction:column}
-  .head{padding:14px 16px 10px;background:linear-gradient(90deg,rgba(30,95,163,.5),rgba(105,166,217,.25));border-bottom:1px solid rgba(255,255,255,.06)}
-  .head h1{margin:0;font-size:18px} .head p{margin:2px 0 0;font-size:12px;opacity:.9}
+  .popup{
+    width:min(430px,100%);height:min(800px,96vh);
+    background:var(--card);
+    border-radius:24px;border:1px solid #e9eef5;
+    box-shadow:0 20px 60px rgba(18,38,63,.12);
+    overflow:hidden;display:flex;flex-direction:column
+  }
+  .head{padding:14px 16px 10px;background:linear-gradient(90deg,#eaf4ff,#fdf7e6);
+        border-bottom:1px solid #eef3f9}
+  .head h1{margin:0;font-size:18px} .head p{margin:2px 0 0;font-size:12px;color:var(--muted)}
 
-  .content{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto}
-  .card{background:linear-gradient(180deg,#14335d,#102a4e);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:12px;
-        box-shadow:0 20px 50px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.03)}
+  .content{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto;background:linear-gradient(180deg,#f7fafe,#fdfdfd)}
+  .card{
+    background:var(--card);border:1px solid #eef3f9;border-radius:20px;padding:12px;
+    box-shadow:0 8px 24px rgba(18,38,63,.07)
+  }
   .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
 
   .stage{position:relative;display:flex;align-items:center;justify-content:center;padding:16px}
   .wheel-wrap{position:relative;width:min(320px,84vw);aspect-ratio:1/1}
 
-  /* Rotor (spins disc + labels together) */
-  .rotor{position:absolute;inset:0;transform:rotate(0deg);transition:transform 3.2s cubic-bezier(.12,.2,.03,1);will-change:transform}
-  .disc{position:absolute;inset:0;border-radius:50%;z-index:1;
-        background:conic-gradient(from -90deg,
-          var(--gold) 0 45deg, var(--blue) 45deg 90deg,
-          var(--gold-2) 90deg 135deg, var(--blue-2) 135deg 180deg,
-          var(--gold) 180deg 225deg, var(--blue) 225deg 270deg,
-          var(--gold-2) 270deg 315deg, var(--blue-2) 315deg 360deg);
-        border:10px solid rgba(255,255,255,.1);
-        box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 20px 40px rgba(0,0,0,.35)}
-
-  /* Labels (emoji) sit ABOVE disc and rotate with rotor */
-  .labels{position:absolute;inset:0;z-index:2;list-style:none;margin:0;padding:0;pointer-events:none}
-  .labels .tag{
-    position:absolute;transform:translate(-50%,-50%);
-    font-size:30px;line-height:1;
-    font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui,Arial, sans-serif;
-    filter:drop-shadow(0 2px 4px rgba(0,0,0,.45));
+  /* Rotor spins and CLIPS everything to a perfect circle */
+  .rotor{
+    position:absolute; inset:0;
+    transform:rotate(0deg);
+    transition:transform 3.2s cubic-bezier(.12,.2,.03,1);
+    will-change:transform;
+    border-radius:50%;
+    overflow:hidden;
   }
-  /* Caption under emoji (small text) */
-  .labels .cap{
-    position:absolute;transform:translate(-50%,-50%);top:calc(50% + 28px); /* placed below emoji */
-    font-size:10px;opacity:.95;letter-spacing:.2px;font-weight:700;white-space:nowrap;
-    text-shadow:0 1px 2px rgba(0,0,0,.5);
+
+  /* Disc with colored slices */
+  .disc{
+    position:absolute;inset:0;border-radius:50%;z-index:1;
+    background:conic-gradient(from -90deg,
+      var(--gold) 0 45deg, var(--blue) 45deg 90deg,
+      var(--gold-2) 90deg 135deg, var(--blue-2) 135deg 180deg,
+      var(--gold) 180deg 225deg, var(--blue) 225deg 270deg,
+      var(--gold-2) 270deg 315deg, var(--blue-2) 315deg 360deg);
+    border:var(--rim) solid var(--ring);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.03),0 10px 24px rgba(18,38,63,.08)
+  }
+
+  /* Labels sit OVER disc and rotate with rotor */
+  .labels{
+    position:absolute; inset:var(--labels-pad); z-index:2;
+    list-style:none; margin:0; padding:0; pointer-events:none;
+  }
+  /* Centered square stabilizes all glyph widths/heights */
+  .labels .tag{
+    position:absolute; left:50%; top:50%;
+    width:44px; height:44px;
+    display:flex; align-items:center; justify-content:center;
+    transform:translate(-50%,-50%);  /* we’ll move via left/top */
+    font-size:28px; line-height:1;
+    font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui,Arial,sans-serif;
+    filter:drop-shadow(0 1px 0 rgba(0,0,0,.06));
+    user-select:none;
   }
 
   /* Center hub */
-  .hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;
-       width:84px;height:84px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#cfe7ff,#69A6D9);
-       border:4px solid rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);
-       display:flex;align-items:center;justify-content:center;font-size:28px}
+  #hub{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;
+    width:90px;height:90px;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#fff6d6,#ffd77a);
+    border:4px solid #fff3c4;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 4px 10px rgba(18,38,63,.10);
+    display:flex;align-items:center;justify-content:center;font-size:28px
+  }
 
   /* Pointer on top */
-  .pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:4;
-    width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:18px solid #ffd56a;
-    filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
+  .pointer{
+    position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:4;
+    width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:18px solid var(--accent);
+    filter:drop-shadow(0 2px 6px rgba(18,38,63,.25))
+  }
   .pointer-base{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:4;width:18px;height:18px;border-radius:50%;
-    background:#0b2036;border:2px solid #ffd56a}
+    background:#fff;border:2px solid var(--accent);box-shadow:0 2px 6px rgba(18,38,63,.15)}
 
   .controls{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap}
-  .btn{padding:10px 12px;border:none;border-radius:14px;font-weight:800;cursor:pointer;color:#0b1424;
-       background:linear-gradient(180deg,var(--gold),var(--gold-2));box-shadow:0 10px 24px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.12)}
-  .btn.secondary{background:linear-gradient(180deg,#c9e2ff,#69A6D9);color:#06243f}
-  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn{
+    padding:10px 12px;border:none;border-radius:14px;font-weight:800;cursor:pointer;color:#08243e;
+    background:linear-gradient(180deg,#ffd97f,#ffbf3f);
+    box-shadow:0 6px 16px rgba(18,38,63,.12),inset 0 0 0 1px rgba(255,255,255,.7)
+  }
+  .btn.secondary{
+    background:linear-gradient(180deg,#e6f1ff,#acd4ff);
+    color:#053869
+  }
+  .btn:disabled{opacity:.55;cursor:not-allowed}
 
-  .tickets{display:flex;align-items:center;gap:8px;font-weight:800}
-  .ticket-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
-  .ticket-badge i{font-style:normal}
+  .tickets{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--muted)}
+  .ticket-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#f0f5fb;border:1px solid #e4ecf6}
+  .ticket-badge i{font-style:normal;color:var(--text)}
 
-  .result{margin-top:10px;padding:12px;border-radius:14px;text-align:center;font-weight:900;
-          background:linear-gradient(180deg,#ffd56a,var(--gold-2));color:#3b2d00;display:none}
+  .result{
+    margin-top:10px;padding:12px;border-radius:14px;text-align:center;font-weight:900;
+    background:#fff4cf;border:1px solid #ffe39c;color:#3b2d00;display:none
+  }
   .result.show{display:block}
   .result.win{animation:pop 600ms ease}
   .result.lose{animation:shake 500ms ease}
 
   @keyframes pop{0%{transform:scale(.85)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
-  @keyframes shake{
-    0%,100%{transform:translateX(0)}
-    20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}
-  }
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 
-  /* Confetti particles */
+  /* Confetti */
   .confetti{position:fixed;inset:0;pointer-events:none;z-index:999}
   .confetti .p{position:absolute;width:8px;height:12px;opacity:.9;border-radius:2px;will-change:transform,opacity}
 
-  /* Win glow on wheel */
-  .wheel-win .disc{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 0 0 6px rgba(240,192,75,.35),0 20px 40px rgba(0,0,0,.35)}
+  /* Win glow */
+  .wheel-win .disc{box-shadow:inset 0 0 0 1px rgba(0,0,0,.03),0 0 0 6px rgba(255,202,77,.35),0 12px 24px rgba(18,38,63,.10)}
 </style>
 </head>
 <body>
 <div class="overlay" role="dialog" aria-modal="true">
   <div class="popup">
     <div class="head">
-      <h1>ahlibank rewards wheel</h1>
+      <h1>ahlibank Lucky Wheel</h1>
       <p>Pay a bill to get a ticket. Spin for a chance to win!</p>
     </div>
 
@@ -124,7 +165,7 @@
             </div>
 
             <!-- Center hub -->
-            <div class="hub">🎁</div>
+            <div id="hub">🎁</div>
           </div>
         </div>
 
@@ -144,8 +185,7 @@
 
 <script>
 (() => {
-  // --- Define prizes (edit labels/weights here) -----------------------------
-  // type: 'cash' | 'voucher' | 'flight' | 'retry' | 'nothing'
+  // --- Prizes ---------------------------------------------------------------
   const PRIZES = [
     { emoji:"💵", label:"10 OMR Cash",          type:"cash",    amount:10,       weight: 5 },
     { emoji:"⛽️", label:"5 OMR Shell Voucher",  type:"voucher", vendor:"Shell", amount:5, weight: 8 },
@@ -157,15 +197,14 @@
     { emoji:"💵", label:"3 OMR Cash",           type:"cash",    amount:3,        weight:10 },
   ];
   const N = PRIZES.length, SEG = 360 / N;
-  const LAB = PRIZES.map(p => p.label);
-  const EMO = PRIZES.map(p => p.emoji);
 
   // Elements
-  const rotor = document.getElementById('rotor');
-  const list  = document.getElementById('labels');
-  const spinBtn = document.getElementById('spinBtn');
-  const payBtn  = document.getElementById('payBtn');
-  const result  = document.getElementById('result');
+  const rotor  = document.getElementById('rotor');
+  const labels = document.getElementById('labels');
+  const hub    = document.getElementById('hub');
+  const spinBtn= document.getElementById('spinBtn');
+  const payBtn = document.getElementById('payBtn');
+  const result = document.getElementById('result');
   const ticketCountEl = document.getElementById('ticketCount');
   const confettiLayer = document.getElementById('confetti');
   const wheelWrap = document.getElementById('wheelWrap');
@@ -179,48 +218,42 @@
     spinBtn.textContent = tickets>0 ? `SPIN (${tickets})` : 'SPIN';
   }
 
-  // Build emoji + small captions on the wheel
+  // --- Build (emoji only) with your cos/sin placement -----------------------
   function buildLabels(){
-    list.innerHTML = '';
-    const size = list.getBoundingClientRect().width; // equals wheel size
-    const r = (size/2) - 34; // room from rim
-    for (let i=0;i<N;i++){
-      const angleDeg = -90 + i*SEG + SEG/2;  // center of slice, 12 o’clock reference
-      const t = angleDeg * Math.PI / 180;
-      const x = Math.cos(t) * r;
-      const y = Math.sin(t) * r;
+    labels.innerHTML = '';
 
-      // emoji
+    const bbox = labels.getBoundingClientRect();   // wheel inner square (inset)
+    const size = bbox.width;
+    const radius = size / 2;
+
+    const hubR = hub.getBoundingClientRect().width / 2;  // true hub radius
+    const rim  = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--rim')) || 10;
+
+    // Keep emojis clear of hub and rim
+    const OUT = radius - rim - 12;         // inside rim
+    const IN  = hubR + 10;                  // just outside hub
+    const R   = IN + (OUT - IN) * 0.62;     // sweet spot
+
+    for (let i=0;i<N;i++){
+      const deg = -90 + i*SEG + SEG/2;     // center of slice
+      const t = deg * Math.PI / 180;
+      const x = Math.cos(t) * R;
+      const y = Math.sin(t) * R;
+
       const span = document.createElement('span');
       span.className = 'tag';
-      span.textContent = EMO[i];
+      span.textContent = PRIZES[i].emoji;
       span.style.left = `calc(50% + ${x}px)`;
       span.style.top  = `calc(50% + ${y}px)`;
-      list.appendChild(span);
-
-      // caption (short label)
-      const cap = document.createElement('span');
-      cap.className = 'cap';
-      cap.textContent = PRIZES[i].label.replace(' OMR','');
-      cap.style.left = span.style.left;
-      cap.style.top  = `calc(${span.style.top} + 20px)`;
-      list.appendChild(cap);
+      labels.appendChild(span);
     }
   }
 
   // --- Weighted randomness / control ----------------------------------------
   let spinning = false, rotation = 0;
-  let forcedIndex = null;                 // if set, next spin is forced to this index
-  let weights = null;                     // optional overrides via setWeights()
+  let forcedIndex = null;
+  let weights = null;
 
-  function labelToIndex(x){
-    if (typeof x === 'number') return ((x % N) + N) % N;
-    const i = LAB.findIndex(l => l.toLowerCase() === String(x).toLowerCase());
-    if (i === -1) throw new Error(`No slice labeled "${x}".`);
-    return i;
-  }
-
-  // Compute rotation delta so pointer lands on index i (aiming at center of slice)
   function deltaToIndex(i){
     const current = ((rotation % 360) + 360) % 360;
     const targetAngle = (i * SEG + SEG/2) % 360;
@@ -229,14 +262,14 @@
     const minSpins = 2, safety = 30;
     if (delta < safety) delta += 360;
     delta += minSpins * 360;
-    const jitter = (Math.random() * 12 - 6); // +/-6°
+    const jitter = (Math.random() * 12 - 6);
     return delta + jitter;
   }
 
   function pickWeightedIndex(){
-    const base = weights
-      ? LAB.map(label => Math.max(0, Number(weights[label] ?? 0)))
-      : PRIZES.map(p => Math.max(0, Number(p.weight ?? 0)));
+    const base = (weights
+      ? PRIZES.map(p => Math.max(0, Number(weights[p.label] ?? 0)))
+      : PRIZES.map(p => Math.max(0, Number(p.weight ?? 0))));
     const sum = base.reduce((a,b)=>a+b,0);
     if (sum <= 0) return Math.floor(Math.random() * N);
     const r = Math.random() * sum;
@@ -251,23 +284,23 @@
     return Math.floor(pointerAngle / SEG);
   }
 
-  // --- Confetti (lightweight) -----------------------------------------------
+  // --- Confetti --------------------------------------------------------------
   function confettiBurst(){
     confettiLayer.innerHTML = '';
-    const colors = ['#F0C04B','#69A6D9','#F7FAFF','#ffd56a','#9dd1ff'];
-    const count = 100;
-    const w = window.innerWidth, h = window.innerHeight;
+    const colors = ['#ffd77a','#a9d4ff','#ffffff','#ffeca6','#d7ecff'];
+    const count = 90;
+    const w = window.innerWidth;
 
     for (let i=0;i<count;i++){
       const p = document.createElement('div');
       p.className = 'p';
       const x = Math.random() * w;
-      const y = -20; // from top
+      const y = -20;
       const rot = Math.random()*360;
       const scale = 0.8 + Math.random()*0.6;
-      const vy = 60 + Math.random()*220;
+      const vy = 80 + Math.random()*220;
       const vx = -120 + Math.random()*240;
-      const dur = 1200 + Math.random()*1200;
+      const dur = 1000 + Math.random()*1200;
       p.style.left = x+'px';
       p.style.top = y+'px';
       p.style.background = colors[i % colors.length];
@@ -277,9 +310,9 @@
       const start = performance.now();
       function tick(now){
         const t = Math.min(1, (now - start) / dur);
-        const ease = t<.5 ? 2*t*t : -1+(4-2*t)*t; // easeInOutQuad
+        const ease = t<.5 ? 2*t*t : -1+(4-2*t)*t;
         const dx = vx * ease;
-        const dy = vy * (t*t + t);               // fall faster
+        const dy = vy * (t*t + t);
         const r = rot + 720*t;
         p.style.transform = `translate(${dx}px, ${dy}px) rotate(${r}deg) scale(${scale})`;
         p.style.opacity = String(1 - t);
@@ -288,10 +321,7 @@
       requestAnimationFrame(tick);
     }
   }
-
-  function clearWinEffects(){
-    wheelWrap.classList.remove('wheel-win');
-  }
+  function clearWinEffects(){ wheelWrap.classList.remove('wheel-win'); }
 
   // --- Spin flow -------------------------------------------------------------
   function spin(){
@@ -302,12 +332,11 @@
       return;
     }
 
-    // spend a ticket immediately
-    updateTickets(-1);
+    updateTickets(-1); // spend ticket
 
     spinning = true;
     spinBtn.disabled = true;
-    result.className = 'result'; // clear
+    result.className = 'result';
 
     const idx = (forcedIndex !== null) ? forcedIndex : pickWeightedIndex();
     forcedIndex = null;
@@ -321,11 +350,8 @@
     if(e.propertyName!=='transform') return;
     const idx = angleToIndex(rotation);
     const prize = PRIZES[idx];
-
-    // Determine outcome
     const isWin = (prize.type === 'cash' || prize.type === 'voucher' || prize.type === 'flight');
 
-    // Friendly message
     let msg = '';
     switch(prize.type){
       case 'cash':    msg = `You won ${prize.amount} OMR 💸`; break;
@@ -333,10 +359,8 @@
       case 'flight':  msg = `Grand prize: ✈️ Flight Ticket!`; break;
       case 'retry':   msg = `Try again! 🔁`; break;
       case 'nothing': msg = `Nothing this time. ∅`; break;
-      default:        msg = prize.label;
     }
 
-    // UI feedback
     if (isWin){
       result.textContent = `${prize.label} — ${msg}`;
       result.className = 'result show win';
@@ -353,32 +377,24 @@
     spinBtn.disabled = tickets <= 0;
   });
 
-  // --- Public API (optional) -------------------------------------------------
+  // Public API (optional)
   const api = {
-    rigNext(labelOrIndex){ forcedIndex = labelToIndex(labelOrIndex); return forcedIndex; },
-    spinTo(labelOrIndex){ forcedIndex = labelToIndex(labelOrIndex); spin(); },
-    setWeights(map){ weights = { ...map }; return weights; },   // { "10 OMR Cash": 2, "Flight Ticket": 1, ... }
-    clearWeights(){ weights = null; },
-    labels: LAB.slice(),
-    prizes: PRIZES.map(p => ({...p})),
-    addTickets(n=1){ updateTickets(n); },
+    rigNext(i){ forcedIndex = (typeof i==='number')? ((i%N+N)%N) : PRIZES.findIndex(p=>p.label===i); },
+    addTickets(n=1){ updateTickets(n); }
   };
-  Object.defineProperty(window, 'wheel', { value: api, writable: false });
+  Object.defineProperty(window,'wheel',{value:api,writable:false});
 
-  // --- Buttons ---------------------------------------------------------------
+  // Buttons
   payBtn.addEventListener('click', ()=>{
-    // simulate a successful bill payment -> grant 1 ticket
-    // (if you have real payment logic, call updateTickets(1) after success)
     updateTickets(1);
     result.textContent = 'Payment received ✅ You got a spin ticket!';
     result.className = 'result show win';
     setTimeout(()=>{ if(result.classList.contains('win')) result.classList.remove('win'); }, 600);
   });
-
   spinBtn.addEventListener('click', spin);
   window.addEventListener('keydown', e=>{ if(e.key===' '){ e.preventDefault(); spin(); } });
 
-  // Build after layout so we have the correct size
+  // Build after layout
   window.addEventListener('load', ()=>{ buildLabels(); updateTickets(0); });
   window.addEventListener('resize', buildLabels);
 })();
