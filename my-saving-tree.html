@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Savings Tree — Grow & Win</title>
+<title>Savings Tree — Stable Growth</title>
 <style>
-  /* ===== Brand (blue & gold) ===== */
   :root{
     --blue:#1E5FA3; --blue-2:#69A6D9;
     --gold:#F0C04B; --gold-2:#D9A630;
@@ -16,13 +15,10 @@
   html,body{height:100%}
   body{
     margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
-    background:
-      radial-gradient(900px 600px at 50% -10%, #1b3c66 10%, #0e1f33 60%),
-      linear-gradient(180deg,#0e1f33,#0b1828);
+    background:radial-gradient(900px 600px at 50% -10%, #1b3c66 10%, #0e1f33 60%), linear-gradient(180deg,#0e1f33,#0b1828);
     color:var(--text);
   }
 
-  /* ===== Mobile pop-up shell ===== */
   .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px}
   .popup{
     width:min(430px,100%);height:min(800px,96vh);
@@ -32,21 +28,16 @@
     overflow:hidden;display:flex;flex-direction:column;position:relative;
   }
 
-  /* Header */
-  .head{
-    display:flex;align-items:center;gap:12px;padding:14px 16px 10px;
-    background:linear-gradient(90deg,rgba(30,95,163,.5),rgba(105,166,217,.25));
-    border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:blur(8px);
-  }
-  .brand svg{display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))}
-  .title h1{margin:0;font-size:18px;letter-spacing:.2px}
+  .head{display:flex;align-items:center;gap:12px;padding:14px 16px 10px;
+        background:linear-gradient(90deg,rgba(30,95,163,.5),rgba(105,166,217,.25));
+        border-bottom:1px solid rgba(255,255,255,.06)}
+  .title h1{margin:0;font-size:18px}
   .title p{margin:2px 0 0;font-size:12px;color:var(--muted)}
 
-  /* HUD */
   .hud{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;flex-wrap:wrap}
-  .pill{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#eaf3ff;font-size:12px;padding:6px 10px;border-radius:999px}
+  .pill{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+        color:#eaf3ff;font-size:12px;padding:6px 10px;border-radius:999px}
 
-  /* Content */
   .content{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto}
   .card{
     background:linear-gradient(180deg,#14335d,#102a4e);
@@ -54,86 +45,70 @@
     box-shadow:0 20px 50px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);
   }
   .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-  .label{font-weight:800;letter-spacing:.2px}
+  .label{font-weight:800}
   .small{font-size:12px;color:#b8d3ff}
 
-  /* Progress */
-  .progress{height:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:999px;overflow:hidden}
+  .progress{height:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+            border-radius:999px;overflow:hidden}
   .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--gold-2));transition:width .25s ease}
 
-  /* Tree area */
-  .garden{position:relative;height:270px;border-radius:16px;background:linear-gradient(180deg,#0e2748,#0c213e);
+  /* ===== Garden & Tree (stable, frame-safe) ===== */
+  .garden{position:relative;height:260px;border-radius:16px;background:linear-gradient(180deg,#0e2748,#0c213e);
           border:1px solid rgba(255,255,255,.06);display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
   .soil{position:absolute;left:0;right:0;bottom:0;height:60px;background:linear-gradient(180deg,#0b1b30,#081425)}
-  .tree{position:relative;width:180px;height:230px;transform:translateY(6px)}
-  .trunk{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:22px;height:110px;border-radius:12px;background:#7b5636;box-shadow:inset 0 -10px 0 rgba(0,0,0,.15)}
-  .leaf{position:absolute;bottom:120px;left:50%;width:120px;height:120px;border-radius:50%;
-        background:radial-gradient(circle at 30% 30%, #b9e7ff, #69A6D9); /* blue leaf = brand */
-        transform-origin:60% 80%;opacity:0;transform:scale(.6) translate(-50%,0);filter:drop-shadow(0 10px 24px rgba(0,0,0,.4))}
-  .leaf.l2{width:150px;height:150px;bottom:145px;left:45%}
-  .leaf.l3{width:170px;height:170px;bottom:160px;left:35%}
-  .leaf.l4{width:190px;height:190px;bottom:175px;left:30%}
+  .tree{position:relative;width:180px;height:230px;transform-origin:center bottom;
+        transform:translateY(6px) scale(var(--g,.85)); transition:transform .25s ease;}
+  .trunk{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);
+         width:22px;height:110px;border-radius:12px;background:#7b5636;box-shadow:inset 0 -10px 0 rgba(0,0,0,.15)}
+
+  /* Crown leaves — resized & repositioned to fit at 100% scale */
+  .leaf{position:absolute;bottom:100px;left:50%;width:95px;height:95px;border-radius:50%;
+        background:radial-gradient(circle at 30% 30%, #b9e7ff, #69A6D9);
+        transform-origin:60% 80%;opacity:0;transform:scale(.8) translate(-50%,0);
+        filter:drop-shadow(0 10px 24px rgba(0,0,0,.4)); transition:opacity .28s ease, transform .28s ease}
+  .leaf.l2{width:115px;height:115px;bottom:110px;left:46%}
+  .leaf.l3{width:135px;height:135px;bottom:120px;left:40%}
+  .leaf.l4{width:150px;height:150px;bottom:125px;left:37%}
+
   .tree.stage1 .leaf.l1{opacity:1;transform:scale(1) translate(-50%,0)}
   .tree.stage2 .leaf.l2{opacity:1;transform:scale(1) translate(-50%,0)}
   .tree.stage3 .leaf.l3{opacity:1;transform:scale(1) translate(-50%,0)}
   .tree.stage4 .leaf.l4{opacity:1;transform:scale(1) translate(-50%,0)}
-  .coin{
-    position:absolute;bottom:60px;left:calc(50% + 20px);width:22px;height:22px;border-radius:50%;
-    background:radial-gradient(circle at 35% 35%, #ffeaa6, #F0C04B);border:1px solid #D9A630;opacity:0
-  }
-  .drop{position:absolute;top:-10px;left:50%;width:10px;height:14px;border-radius:10px 10px 12px 12px;background:#69A6D9;transform:translateX(-50%);opacity:0}
 
-  /* Controls */
+  .coin{position:absolute;bottom:60px;left:calc(50% + 18px);width:22px;height:22px;border-radius:50%;
+        background:radial-gradient(circle at 35% 35%, #ffeaa6, #F0C04B);border:1px solid #D9A630;opacity:0}
+  .drop{position:absolute;top:-10px;left:50%;width:10px;height:14px;border-radius:10px 10px 12px 12px;background:#69A6D9;
+        transform:translateX(-50%);opacity:0}
+
   .chips{display:flex;flex-wrap:wrap;gap:8px}
   .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:999px;font-weight:800;font-size:12px;
         background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);cursor:pointer}
-  .btn{
-    padding:10px 12px;border:none;border-radius:14px;font-weight:800;letter-spacing:.2px;cursor:pointer;
-    color:#0b1424;box-shadow:0 10px 24px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.12);
-    background:linear-gradient(180deg,var(--gold),var(--gold-2));
-  }
+  .btn{padding:10px 12px;border:none;border-radius:14px;font-weight:800;letter-spacing:.2px;cursor:pointer;
+       color:#0b1424;box-shadow:0 10px 24px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.12);
+       background:linear-gradient(180deg,var(--gold),var(--gold-2))}
   .btn.secondary{background:linear-gradient(180deg,#c9e2ff,#69A6D9);color:#06243f}
   .switch{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:4px 6px}
   .sw{width:44px;height:24px;border-radius:999px;background:#273e5e;position:relative;border:1px solid rgba(255,255,255,.12);cursor:pointer}
   .knob{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:50%;left:3px;transform:translateY(-50%);transition:left .18s ease}
-  .on .sw{background:linear-gradient(180deg,var(--gold),var(--gold-2))}
-  .on .knob{left:23px}
+  .on .sw{background:linear-gradient(180deg,var(--gold),var(--gold-2))} .on .knob{left:23px}
 
-  /* Toast / banner */
-  .toast{
-    position:absolute;left:50%;transform:translateX(-50%);bottom:88px;
-    background:#0f2a4d;color:#eaf3ff;border:1px solid rgba(255,255,255,.12);
-    padding:10px 14px;border-radius:14px;font-size:12px;display:none;
-    box-shadow:0 16px 40px rgba(0,0,0,.45)
-  }
-  .banner{
-    margin-top:8px;padding:10px 12px;border-radius:14px;font-size:14px;font-weight:800;text-align:center;
-    background:linear-gradient(180deg,#ffd56a,var(--gold-2));color:#3b2d00;display:none
-  }
+  .toast{position:absolute;left:50%;transform:translateX(-50%);bottom:88px;background:#0f2a4d;color:#eaf3ff;border:1px solid rgba(255,255,255,.12);
+         padding:10px 14px;border-radius:14px;font-size:12px;display:none;box-shadow:0 16px 40px rgba(0,0,0,.45)}
+  .banner{margin-top:8px;padding:10px 12px;border-radius:14px;font-size:14px;font-weight:800;text-align:center;
+          background:linear-gradient(180deg,#ffd56a,var(--gold-2));color:#3b2d00;display:none}
   .banner.show{display:block}
 </style>
 </head>
 <body>
   <div class="overlay" role="dialog" aria-modal="true" aria-label="Savings Tree Game">
     <div class="popup">
-      <!-- Header -->
       <div class="head">
-        <div class="brand" aria-hidden="true">
-          <!-- two rings in brand colors -->
-          <svg width="44" height="34" viewBox="0 0 64 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="26" cy="26" r="18" stroke="#1E5FA3" stroke-width="6" fill="none"/>
-            <circle cx="26" cy="26" r="12" stroke="#69A6D9" stroke-width="6" fill="none" opacity=".6"/>
-            <circle cx="42" cy="26" r="18" stroke="#F0C04B" stroke-width="6" fill="none"/>
-            <circle cx="42" cy="26" r="12" stroke="#D9A630" stroke-width="6" fill="none" opacity=".6"/>
-          </svg>
-        </div>
         <div class="title">
           <h1>Savings Tree</h1>
-          <p>Top-up to grow the tree. Unlock entries at 25/50/75/100%.</p>
+          <p>Stable growth that stays inside the frame. Unlock entries at 25/50/75/100%.</p>
         </div>
       </div>
 
-      <!-- HUD -->
       <div class="hud">
         <span class="pill">Goal: <b id="goalLabel">OMR 100.00</b></span>
         <span class="pill">Saved: <b id="savedLabel">OMR 0.00</b></span>
@@ -141,7 +116,6 @@
       </div>
 
       <div class="content">
-        <!-- Tree -->
         <section class="card">
           <div class="row">
             <div class="label">Your tree</div>
@@ -176,7 +150,6 @@
           <div class="banner" id="banner"></div>
         </section>
 
-        <!-- Controls -->
         <section class="card">
           <div class="row">
             <div class="label">Top-up now</div>
@@ -213,22 +186,13 @@
 
 <script>
 (function(){
-  /* ------------------ Config ------------------ */
-  const DAILY_CAP = 5;               // entries/day
-  const REWARDS = {25:1, 50:1, 75:1, 100:3}; // % thresholds → entries
+  const DAILY_CAP = 5;
+  const REWARDS = {25:1,50:1,75:1,100:3};
 
-  /* ------------------ State ------------------ */
-  let goal = 100;
-  let saved = 0;
-  let soEnabled = false;
-  let entriesToday = 0;
-  let dayKey = "";
-
-  // record which thresholds you've already claimed for the current goal
+  let goal = 100, saved = 0, soEnabled = false, entriesToday = 0, dayKey = "";
   let milestonesClaimed = {25:false,50:false,75:false,100:false};
   let soBonusClaimed = false;
 
-  /* ------------------ Elements ------------------ */
   const goalLabel = document.getElementById('goalLabel');
   const savedLabel = document.getElementById('savedLabel');
   const entriesTodayEl = document.getElementById('entriesToday');
@@ -242,149 +206,117 @@
   const toast = document.getElementById('toast');
   const customInput = document.getElementById('custom');
   const addBtn = document.getElementById('addBtn');
-
   const amountChips = Array.from(document.querySelectorAll('.chip:not(.goal)'));
   const goalChips   = Array.from(document.querySelectorAll('.chip.goal'));
 
-  /* ------------------ Storage ------------------ */
-  function keyDay(){
-    const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  }
+  function keyDay(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
   function saveState(){
-    localStorage.setItem('savingsTree.state', JSON.stringify({
-      goal, saved, soEnabled, entriesToday, dayKey, milestonesClaimed, soBonusClaimed
-    }));
+    localStorage.setItem('savingsTree.state', JSON.stringify({goal,saved,soEnabled,entriesToday,dayKey,milestonesClaimed,soBonusClaimed}));
   }
   function loadState(){
     const raw = localStorage.getItem('savingsTree.state');
-    if(raw){ try{
-      const d = JSON.parse(raw);
-      goal = Number(d.goal||100);
-      saved = Number(d.saved||0);
-      soEnabled = !!d.soEnabled;
-      entriesToday = Number(d.entriesToday||0);
-      dayKey = d.dayKey || keyDay();
-      milestonesClaimed = d.milestonesClaimed || {25:false,50:false,75:false,100:false};
-      soBonusClaimed = !!d.soBonusClaimed;
-    }catch{} }
-    // rollover daily cap
-    const today = keyDay();
-    if(dayKey !== today){ dayKey = today; entriesToday = 0; }
+    if(raw){try{
+      const d=JSON.parse(raw);
+      goal=Number(d.goal||100); saved=Number(d.saved||0); soEnabled=!!d.soEnabled;
+      entriesToday=Number(d.entriesToday||0); dayKey=d.dayKey||keyDay();
+      milestonesClaimed=d.milestonesClaimed||{25:false,50:false,75:false,100:false};
+      soBonusClaimed=!!d.soBonusClaimed;
+    }catch{}}
+    const today=keyDay(); if(dayKey!==today){dayKey=today; entriesToday=0;}
   }
 
-  /* ------------------ UI ------------------ */
-  const fmt = n => 'OMR ' + Number(n).toFixed(2);
+  const fmt=n=>'OMR '+Number(n).toFixed(2);
   function updateHUD(){
     goalLabel.textContent = fmt(goal);
     savedLabel.textContent = fmt(saved);
     entriesTodayEl.textContent = String(entriesToday);
     soState.textContent = soEnabled ? 'ON' : 'OFF';
     toggleSO.classList.toggle('on', soEnabled);
-    const pct = goal>0 ? Math.min(100, (saved/goal)*100) : 0;
+
+    const pct = goal>0 ? Math.min(100,(saved/goal)*100) : 0;
     barEl.style.width = pct + '%';
-    // tree stages
+
+    // Stable growth scale (never exceeds frame)
+    const g = 0.85 + 0.15*(pct/100); // 0.85 → 1.00
+    treeEl.style.setProperty('--g', g.toFixed(3));
+
+    // Stage leaves visibility
     treeEl.classList.toggle('stage1', pct>=25);
     treeEl.classList.toggle('stage2', pct>=50);
     treeEl.classList.toggle('stage3', pct>=75);
     treeEl.classList.toggle('stage4', pct>=100);
   }
+
   function showToast(msg,dur=1200){
-    toast.textContent = msg;
-    toast.style.display='block';
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(()=> toast.style.display='none', dur);
+    toast.textContent=msg; toast.style.display='block';
+    clearTimeout(showToast._t); showToast._t=setTimeout(()=>toast.style.display='none',dur);
   }
   function addEntries(n){
-    const grant = Math.min(n, Math.max(0, DAILY_CAP - entriesToday));
-    entriesToday += grant;
-    entriesTodayEl.textContent = entriesToday;
+    const grant=Math.min(n,Math.max(0,DAILY_CAP-entriesToday));
+    entriesToday+=grant; entriesTodayEl.textContent=entriesToday;
     if(grant>0) showToast(`+${grant} entry${grant>1?'ies':''} (${entriesToday}/${DAILY_CAP})`);
-    if(n>grant) showToast("Daily entry cap reached.", 1400);
+    if(n>grant) showToast("Daily entry cap reached.",1400);
     saveState();
   }
-  function splash(amount){
-    // droplet + coin pop
+
+  function splash(){
     dropEl.style.opacity=1; coinEl.style.opacity=1;
-    dropEl.animate([{transform:'translate(-50%,-10px)',opacity:0},
-                    {transform:'translate(-50%,60px)',opacity:1},
-                    {transform:'translate(-50%,100px)',opacity:0}],{duration:600,easing:'ease-out'});
-    coinEl.animate([{transform:'scale(.6)',opacity:.0},{transform:'scale(1.1)',opacity:1},{transform:'scale(1)',opacity:1}],{duration:300});
+    dropEl.animate([{transform:'translate(-50%,-10px)',opacity:0},{transform:'translate(-50%,60px)',opacity:1},{transform:'translate(-50%,100px)',opacity:0}],{duration:600,easing:'ease-out'});
+    coinEl.animate([{transform:'scale(.8)',opacity:.0},{transform:'scale(1.1)',opacity:1},{transform:'scale(1)',opacity:1}],{duration:300});
   }
+
   function confetti(){
-    const host = document.querySelector('.popup'); const n=20;
+    const host=document.querySelector('.popup'); const n=20;
     for(let i=0;i<n;i++){
-      const s = document.createElement('div');
-      Object.assign(s.style,{position:'absolute',left:(10+Math.random()*80)+'%',top:'12%',
-        width:'6px',height:'6px',borderRadius:'50%',background: i%2?'var(--gold)':'#69A6D9',boxShadow:'0 0 10px rgba(0,0,0,.3)',zIndex:'99'});
+      const s=document.createElement('div');
+      Object.assign(s.style,{position:'absolute',left:(10+Math.random()*80)+'%',top:'12%',width:'6px',height:'6px',borderRadius:'50%',
+        background:i%2?'var(--gold)':'#69A6D9',boxShadow:'0 0 10px rgba(0,0,0,.3)',zIndex:'99'});
       host.appendChild(s);
       const dx=(Math.random()*2-1)*60, dy=520+Math.random()*60;
-      s.animate([{transform:'translate(0,0)',opacity:1},{transform:`translate(${dx}px, ${dy}px)`,opacity:0}],
-                {duration:900+Math.random()*500,easing:'cubic-bezier(.2,.7,.2,1)'}).onfinish=()=>s.remove();
+      s.animate([{transform:'translate(0,0)',opacity:1},{transform:`translate(${dx}px, ${dy}px)`,opacity:0}],{duration:900+Math.random()*500,easing:'cubic-bezier(.2,.7,.2,1)'}).onfinish=()=>s.remove();
     }
   }
 
-  /* ------------------ Logic ------------------ */
   function topUp(amount){
-    amount = Math.max(0, Number(amount)||0);
-    if(amount<=0){ showToast("Enter a valid amount"); return; }
-    saved = +(saved + amount).toFixed(2);
-    splash(amount);
-    checkMilestones();
-    updateHUD(); saveState();
+    amount=Math.max(0,Number(amount)||0);
+    if(amount<=0){showToast("Enter a valid amount");return;}
+    saved=+(saved+amount).toFixed(2); splash(); checkMilestones(); updateHUD(); saveState();
   }
 
   function checkMilestones(){
-    const pct = goal>0 ? Math.min(100, Math.floor((saved/goal)*100)) : 0;
-    const order = [25,50,75,100];
-    let bonusText = [];
+    const pct=goal>0 ? Math.min(100,Math.floor((saved/goal)*100)) : 0;
+    const order=[25,50,75,100]; let msgs=[];
     for(const m of order){
       if(pct>=m && !milestonesClaimed[m]){
-        milestonesClaimed[m]=true;
-        addEntries(REWARDS[m]);
-        bonusText.push(`${m}% +${REWARDS[m]}`);
+        milestonesClaimed[m]=true; addEntries(REWARDS[m]); msgs.push(`${m}% +${REWARDS[m]}`);
       }
     }
-    if(bonusText.length){
-      banner.textContent = `Milestones: ${bonusText.join(' • ')}`;
+    if(msgs.length){
+      banner.textContent=`Milestones: ${msgs.join(' • ')}`;
       banner.classList.add('show');
       if(milestonesClaimed[100]) confetti();
     }
   }
 
-  /* ------------------ Events ------------------ */
-  toggleSO.addEventListener('click', ()=>{
-    soEnabled = !soEnabled;
-    if(soEnabled && !soBonusClaimed){
-      soBonusClaimed = true;
-      addEntries(1);
-      showToast("Standing Order ON: +1 entry");
-    }
+  // Events
+  document.getElementById('toggleSO').addEventListener('click',()=>{
+    soEnabled=!soEnabled;
+    if(soEnabled && !soBonusClaimed){soBonusClaimed=true; addEntries(1); showToast("Standing Order ON: +1 entry");}
     updateHUD(); saveState();
   });
 
-  amountChips.forEach(c=> c.addEventListener('click', ()=> topUp(Number(c.dataset.a))));
-  addBtn.addEventListener('click', ()=>{
-    const v = Number(customInput.value);
-    topUp(v); customInput.value="";
-  });
+  Array.from(document.querySelectorAll('.chip:not(.goal)')).forEach(c=>c.addEventListener('click',()=>topUp(Number(c.dataset.a))));
+  addBtn.addEventListener('click',()=>{const v=Number(customInput.value); topUp(v); customInput.value="";});
 
-  goalChips.forEach(c=> c.addEventListener('click', ()=>{
-    goal = Number(c.dataset.g);
-    milestonesClaimed = {25:false,50:false,75:false,100:false};
+  Array.from(document.querySelectorAll('.chip.goal')).forEach(c=>c.addEventListener('click',()=>{
+    goal=Number(c.dataset.g);
+    milestonesClaimed={25:false,50:false,75:false,100:false};
     banner.classList.remove('show'); banner.textContent='';
     updateHUD(); saveState(); showToast("Goal updated");
   }));
 
-  // keyboard helpers for testers
-  window.addEventListener('keydown',(e)=>{
-    if(e.key==='1') topUp(1);
-    if(e.key==='5') topUp(5);
-    if(e.key==='0') toggleSO.click();
-  });
-
-  /* ------------------ Init ------------------ */
-  loadState();
-  updateHUD();
+  // Init
+  (function init(){ const raw=localStorage.getItem('savingsTree.state'); loadState(); updateHUD(); })();
 })();
 </script>
 </body>
